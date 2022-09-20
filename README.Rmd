@@ -282,7 +282,7 @@ tar_progress_summary()
 The results can be retrieved by the name of the subtask. For example, this will retrieve the latest fit object for the QDirichlet-Metalog model from the article.
 
 ```{r}
-tar_read(fld_pqr_fit)
+tar_read(fld_pqr_fit)|>lapply(head)
 ```
 
 
