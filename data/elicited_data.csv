@@ -1,0 +1,10 @@
+cat_idx,cat,CDFprob,count
+1,Morning coffee (0-4 g/day),0.25,20
+1,Morning coffee (0-4 g/day),0.5,24
+1,Morning coffee (0-4 g/day),0.75,28
+2,After dinner (4-8 g/day),0.25,25
+2,After dinner (4-8 g/day),0.5,31
+2,After dinner (4-8 g/day),0.75,36
+4,Sweet tooth (16+ g/day),0.25,5
+4,Sweet tooth (16+ g/day),0.5,15
+4,Sweet tooth (16+ g/day),0.75,20

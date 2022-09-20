@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="generator" content="pandoc" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+<!--
+Font-awesome icons ie github or twitter
+-->
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/brands.css" integrity="sha384-n9+6/aSqa9lBidZMRCQHTHKJscPq6NW4pCQBiMmHdUCvPN8ZOg2zJJTkC7WIezWv" crossorigin="anonymous">
+
+<!--
+Google fonts api stuff
+-->
+
+
+
+<title>Encoding and updating uncertain judgements using hybrid elicitation and quantile-parametrized distributions</title>
+
+
+<script src="heiiwqpl-poster_files/kePrint-0.0.1/kePrint.js"></script>
+<link href="heiiwqpl-poster_files/lightable-0.0.1/lightable.css" rel="stylesheet" />
+
+
+
+
+<style>
+@page {
+size: 33.1in 46.8in;
+margin: 0;
+padding: 0;
+}
+body {
+margin: 0;
+font-size: 40px;
+width: 33.1in;
+height: 46.8in;
+padding: 0;
+text-align: justify;
+font-family: Palatino;
+}
+.poster_wrap {
+width: 33.1in;
+height: 46.8in;
+padding: 0cm;
+}
+.title_container {
+width: 33.1in;
+height: calc(46.8in * 0.15);
+overflow: hidden;
+background-color: #2B2D42;
+border: 0 solid #9FA2B2;
+}
+.logo_left {
+float: left;
+width: 10%;
+height: 100%;
+background-color: #2B2D42;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.logo_right {
+float: right;
+width: 10%;
+height: 100%;
+background-color: #2B2D42;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.poster_title {
+text-align: center;
+position: relative;
+float: left;
+width: 80%;
+height: 100%;
+color: #FFFFFF;
+top: 50%;
+transform: translateY(-50%);
+-webkit-transform: translateY(-50%);
+}
+#title {
+font-family: Palatino;
+}
+/* unvisited link */
+a:link {
+color: #F7934C;
+}
+.mybreak {
+  break-before: column;
+}
+/* visited link */
+a:visited {
+color: #F7934C;
+}
+
+/* mouse over link */
+a:hover {
+color: #F7934C;
+}
+
+/* selected link */
+a:active {
+color: #F7934C;
+}
+.poster_body {
+-webkit-column-count: 3; /* Chrome, Safari, Opera */
+-moz-column-count: 3; /* Firefox */
+column-count: 3;
+-webkit-column-fill: auto;
+-moz-column-fill: auto;
+column-fill: auto;
+-webkit-column-rule-width: 1mm;
+-moz-column-rule-width: 1mm;
+column-rule-width: 1mm;
+-webkit-column-rule-style: dashed;
+-moz-column-rule-style: dashed;
+column-rule-style: dashed;
+-webkit-column-rule-color: #2B2D42;
+-moz-column-rule-color: #2B2D42;
+column-rule-color: #2B2D42;
+column-gap: 1em;
+padding-left: 0.5em;
+padding-right: 0.5em;
+height: 100%;
+color: #000000
+background-color: #ffffff;
+}
+.poster_title h1 {
+font-size: 75pt;
+margin: 0;
+border: 0;
+font-weight: normal;
+}
+.poster_body_wrap{
+width: calc(33.1in + 0 + 0);
+height: calc(46.8in * 0.83);
+padding-top: calc(46.8in * 0.005);
+padding-bottom: calc(46.8in * 0.01);
+background-color: #ffffff;
+}
+.poster_title h3 {
+color: #9FA2B2;
+font-size: 50pt;
+margin: 0;
+border: 0;
+font-weight: normal;
+}
+.poster_title h3 > sup {
+  font-size: 35pt;
+  margin-left: 0.02em;
+}
+.poster_title h5 {
+color: #FFFFFF;
+font-size: 35pt;
+margin: 0;
+border: 0;
+font-weight: normal;
+}
+img {
+margin-top: 2cm;
+margin-bottom: 0;
+}
+.section {
+  padding: 0.2em;
+}
+.poster_body h1 {
+text-align: center;
+color: #FFFFFF;
+font-size: 65pt;
+border: 2mm solid #2B2D42;
+background-color: #2B2D42;
+border-radius: 4mm 0mm;
+margin-top: 2mm;
+margin-bottom: 2mm;
+font-weight: normal;
+}
+.poster_body h2 {
+color: #000000;
+font-size: 40pt;
+padding-left: 4mm;
+font-weight: normal;
+}
+.span {
+width: 200%;
+}
+/* center align leaflet map,
+from https://stackoverflow.com/questions/52112119/center-leaflet-in-a-rmarkdown-document */
+.html-widget {
+margin: auto;
+position: sticky;
+margin-top: 2cm;
+margin-bottom: 2cm;
+}
+.leaflet.html-widget.html-widget-static-bound.leaflet-container.leaflet-touch.leaflet-fade-anim.leaflet-grab.leaflet-touch-drag.leaflet-touch-zoom {
+position: sticky;
+width: 100%;
+}
+pre.sourceCode.r {
+background-color: #dddddd40;
+border-radius: 4mm;
+padding: 4mm;
+width: 75%;
+/* align-items: center; */
+margin: auto;
+padding-left: 2cm;
+}
+code.sourceCode.r{
+background-color: transparent;
+font-size: 20pt;
+border-radius: 2mm;
+}
+.caption {
+font-size: 25pt;
+}
+.table caption {
+font-size: 25pt;
+padding-bottom: 3mm;
+
+}
+code {
+font-size: 1em;
+font-family: monospace;
+background-color: #9FA2B224;
+color: #2B2D42;
+padding: 1.2mm;
+border-radius: 2mm;
+}
+.poster_title code {
+font-size: 1em;
+}
+table {
+font-size: 40px;
+margin: auto;
+border-top: 3px solid #666;
+border-bottom: 3px solid #666;
+}
+table thead th {
+border-bottom: 3px solid #ddd;
+}
+td {
+padding: 8px;
+}
+th {
+padding: 15px;
+}
+caption {
+margin-bottom: 10px;
+}
+.poster_body p {
+margin-right: 4mm;
+margin-left: 4mm;
+margin-top: 6mm;
+margin-bottom: 10mm;
+}
+.poster_body ol {
+margin-right: 4mm;
+margin-left: 4mm;
+}
+#ul {
+margin-right: 4mm;
+margin-left: 4mm;
+}
+.references p {
+font-size: 20pt;
+}
+.orcid img {
+  width: 1em;
+}
+</style>
+</head>
+<body>
+
+
+<div class="poster_wrap">
+<div class="title_container">
+<!-- Left Logo  -->
+<div class="logo_left">
+<img src= 'fig/Lunds_universitet.svg.png' style="width: 80%">
+</div>
+<!-- Poster Title -->
+<div class= "poster_title">
+<h1 id="title">Encoding and updating uncertain judgements using hybrid elicitation and quantile-parametrized distributions</h1>
+<h3 id="author">Dmytro Perepolkin<sup>1, <a class="orcid" href="https://orcid.org/0000-0001-8558-6183"><img src="https://raw.githubusercontent.com/brentthorne/posterdown/master/images/orcid.jpg"></a></sup>, Ullrika Sahlin<sup>1, <a class="orcid" href="https://orcid.org/0000-0002-2932-6253"><img src="https://raw.githubusercontent.com/brentthorne/posterdown/master/images/orcid.jpg"></a></sup></h3><br>
+<h5 id="affiliation"><sup>1</sup> Centre for Environmental and Climate Science, Lund University, Sweden</h5>
+</div>
+<!-- Right Logo  -->
+<div class="logo_right">
+<img src=https://raw.githubusercontent.com/dmi3kno/qpd/master/data-raw/qpd_hex.png style="width: 80%">
+</div>
+</div>
+
+<div class='poster_body_wrap'>
+<div class='poster_body'>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p><em>Elicitation of parameters</em> <span class="citation">[1, 2]</span> requires that the expert understands the model and the role a particular parameter plays in it. <em>Elicitation of predictions</em> <span class="citation">[3]</span> mixes variability and uncertainty and, therefore, can not be used for learning from data without making additional assumptions <span class="citation">[4, 5]</span>. We propose a <em>hybrid elicitation</em> approach, where elicitation of the observable quantities is accompanied by the elicitation of the uncertainty around them. Hybrid elicitation can be used to define the prior distribution for a model defined by a quantile-parametrized distribution.</p>
+<div id="objectives" class="section level2">
+<h2>Objectives</h2>
+<ol style="list-style-type: decimal">
+<li>Simplify the Bayesian prior specification by adopting a model parameterized by the quantiles of the observable quantity <span class="citation">[6]</span></li>
+<li>Elicit the food consumption distribution with uncertainty for exposure assessment</li>
+<li>Update the expert belief with the observations of actual consumption obtained from the food consumption
+database</li>
+</ol>
+</div>
+</div>
+<div id="materials-and-methods" class="section level1">
+<h1>Materials and Methods</h1>
+<p>We extracted the summary statistics for Level 5 food category from the EFSA food consumption database. The following Figure <a href="#fig:dbpoints">1</a> shows the quantile summary of the chronic consumption of bitter chocolate in Sweden for all age categories from different surveys. Each of the curves represents a predictive distribution for consumption of chocolate.</p>
+<div class="figure"><span style="display:block;" id="fig:dbpoints"></span>
+<img src="heiiwqpl-poster_files/figure-html/dbpoints-1.png" alt="EFSA Food Consumption of bitter chocolate" width="960" />
+<p class="caption">
+Figure 1: EFSA Food Consumption of bitter chocolate
+</p>
+</div>
+<p>Categories of consumers based on Swedish National Dietary Survey - Riskmaten 2010-11 are shown in Figure <a href="#fig:adults2010cats">2</a>. Category cut-off points can be chosen arbitrarily off of the predictive distribution.</p>
+<div class="figure"><span style="display:block;" id="fig:adults2010cats"></span>
+<img src="heiiwqpl-poster_files/figure-html/adults2010cats-1.png" alt="Consumer categories" width="100%" />
+<p class="caption">
+Figure 2: Consumer categories
+</p>
+</div>
+<p>We elicited the uncertainty in the cumulative probabilities associated with the fixed quantiles <span class="citation">[7]</span> using the icon arrays.</p>
+<blockquote>
+<p><strong>Interviewer:</strong> Consider a sample of bitter chocolate consumers, say 100 people. According to your assessment there should be only 24 people that consume up to one bit of chocolate a day. We will interpret this assessment as you
+believing that there’s about equal chance that the actual number of <em>morning coffee</em> consumers (0-4 g/day) in this sample will be above or below 24, i.e we will interpret it as the median assessment. Would you like to reconsider this value?</p>
+</blockquote>
+<p>We adopt the approach described by <span class="citation">[8]</span> for eliciting the uncertainty in the probabilities related to a categorical variable to infer the parameter vector(s) of Dirichlet (or Connor-Mosimann) distribution. In this method the expert assesses the quartiles of the probability for each category using the symmetric percentile triplet elicitation. Elicited uncertainty in the category counts out of hypothetical sample of 100 people were recorded in Table <a href="#tab:eliciteddata">1</a>.</p>
+<table class="table" style="font-family: Cambria; margin-left: auto; margin-right: auto;border-bottom: 0;">
+<caption>
+<span id="tab:eliciteddata">Table 1: </span>Elicited consumer counts by category
+</caption>
+<thead>
+<tr>
+<th style="text-align:right;">
+</th>
+<th style="text-align:left;">
+Category
+</th>
+<th style="text-align:right;">
+P25
+</th>
+<th style="text-align:right;">
+P50
+</th>
+<th style="text-align:right;">
+P75
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+Morning coffee (0-4 g/day)
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:right;">
+28
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+After dinner (4-8 g/day)
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+31
+</td>
+<td style="text-align:right;">
+36
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:left;">
+Sweet tooth (16+ g/day)
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:right;">
+20
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td style="padding: 0; " colspan="100%">
+<sup>*</sup> All consumer counts are out of a sample of 100
+</td>
+</tr>
+</tfoot>
+</table>
+<p>We encoded the elicited uncertainties in the cumulative probabilities by category into the hyperparameter vector of a Dirichlet distribution using the conditional univariate beta distributions <span class="citation">[8]</span>. The resulting Dirichlet distribution can be used as a prior for the model parametrized by quantiles.</p>
+<p>Quantile-parameterized distributions (QPDs) are parameterized by a set of quantile-probability pairs (quantile-probability tuple, QPT) describing an observable <span class="citation">[9, 10]</span>. Uncertainty about the quantiles was updated using Bayesian inference <span class="citation">[11]</span>.</p>
+<div class="figure"><span style="display:block;" id="fig:prior-cdf"></span>
+<img src="heiiwqpl-poster_files/figure-html/prior-cdf-1.png" alt="Prior draws from elicited QDirichlet distribution" width="100%" />
+<p class="caption">
+Figure 3: Prior draws from elicited QDirichlet distribution
+</p>
+</div>
+<p>Estimates of consumption by a median and a high consumer can be extracted from the posterior food consumption distribution together with uncertainty in these estimates, which can be used in exposure assessment (see Figures <a href="#fig:prior-cdf">3</a> and <a href="#fig:posterior-cdf">4</a>).</p>
+</div>
+<div id="results-and-discussion" class="section level1">
+<h1>Results and discussion</h1>
+<p>The hybrid elicitation consists of two phases: elicitation of the quantile values <span class="math inline">\(q\)</span> and elicitation of uncertainty in the cumulative probabilities associated with them (i.e. possible vectors of <span class="math inline">\(p\)</span> which could correspond to the specified vector <span class="math inline">\(q\)</span>).
+The hyperparameter vector <span class="math inline">\(q\)</span> specifies the location of the QDirichlet prior, while the hyperparameter vector <span class="math inline">\(\alpha\)</span> is responsible for defining its shape.</p>
+<p>The parameter vector of Dirichlet distribution combined with the vector of elicited quantiles act as hyper-parameters of the proposed QDirichlet prior, which describes the uncertainty in the parameters of the quantile-parameterized model <a href="#eq:QDirMetModelEq">(1)</a>.</p>
+<p><span class="math display" id="eq:QDirMetModelEq">\[
+\begin{gathered}
+\Delta \sim Dirichlet(\alpha|q); \\
+p=\Large{\Xi}\normalsize_1^n(\Delta);\\
+u =\widehat F_{M_n}(x|p,q);\\
+u \sim f(Q_{M_n}(p,q))
+\end{gathered}
+\tag{1}
+\]</span>
+where <span class="math inline">\(\Delta\)</span> is a simplex of size <span class="math inline">\(n+1\)</span>, <span class="math inline">\(\Large{\Xi}\normalsize_1^n()\)</span> is the cumulative sum operator, <span class="math inline">\(p\)</span> is a size-<span class="math inline">\(n\)</span> tuple of cumulative probabilities, <span class="math inline">\(q\)</span> is the size-<span class="math inline">\(n\)</span> vector of quantiles, corresponding to the cumulative probabilities <span class="math inline">\(p\)</span>, <span class="math inline">\(u\)</span> is the depth corresponding to the observable <span class="math inline">\(x\)</span> given the parameterizing QPT <span class="math inline">\(\{p,q\}\)</span>, <span class="math inline">\(\widehat F_{M_n}(x|p,q)\)</span> is the approximated CDF of the metalog distribution, represented by the numerically inverted <span class="math inline">\(\widehat{Q}^{-1}_{M_n}(x|p,q)\)</span>), indirectly parameterized by <span class="math inline">\(\{p,q\}_n\)</span> via the vector of metalog coefficients <span class="math inline">\(a\)</span>, and <span class="math inline">\(f(Q_{M_n}(u|p,q))=[q_{M_n}(u|p,q)]^{-1}\)</span> is the metalog density quantile function (DQF).</p>
+<p>Posterior predictive check shows significant reduction of uncertainty about the consumption of bitter chocolate.</p>
+<div class="figure"><span style="display:block;" id="fig:posterior-cdf"></span>
+<img src="heiiwqpl-poster_files/figure-html/posterior-cdf-1.png" alt="Posterior draws from QDirichlet-Metalog model" width="100%" />
+<p class="caption">
+Figure 4: Posterior draws from QDirichlet-Metalog model
+</p>
+</div>
+</div>
+<div id="conclusion" class="section level1">
+<h1>Conclusion</h1>
+<p>Asking experts to provide their uncertainty about the elicited QPT is enough to quantify the uncertainty about the food consumption distribution. This approach is particularly useful when the food consumption data is sparse.</p>
+<p><em>Hybrid elicitation</em>, like <em>predictive elicitation</em>, describes only observable quantities. At the same time, like <em>parametric elicitation</em>, the hybrid approach results in the characterization of uncertainty in the model parameters. Hybrid elicitation, therefore, can be viewed as observations-level parametric elicitation for quantile-parameterized models <span class="citation">[6]</span>.</p>
+</div>
+<div id="references" class="section level1 unnumbered">
+<h1>References</h1>
+<div id="refs" class="references csl-bib-body">
+<div id="ref-garthwaite2005StatisticalMethodsEliciting" class="csl-entry">
+1. Garthwaite PH, Kadane JB, O’Hagan A. <a href="https://doi.org/fjs3nd">Statistical methods for eliciting probability distributions</a>. Journal of the American Statistical Association. 2005;100:680–701.
+</div>
+<div id="ref-ohagan2019ExpertKnowledgeElicitation" class="csl-entry">
+2. O’Hagan A. <a href="https://doi.org/gf4jz2">Expert knowledge elicitation: Subjective but scientific</a>. The American Statistician. 2019;73:69–81.
+</div>
+<div id="ref-kadane1998ExperiencesElicitation" class="csl-entry">
+3. Kadane J, Wolfson LJ. <a href="https://doi.org/cvdn73">Experiences in elicitation</a>. Journal of the Royal Statistical Society: Series D (The Statistician). 1998;47:3–19.
+</div>
+<div id="ref-akbarov2009ProbabilityElicitationPredictive" class="csl-entry">
+4. Akbarov A. Probability elicitation: Predictive approach. PhD thesis. University of Salford; 2009.
+</div>
+<div id="ref-hartmann2020FlexiblePriorElicitation" class="csl-entry">
+5. Hartmann M, Agiashvili G, Bürkner P, Klami A. <a href="https://arxiv.org/abs/2002.09868">Flexible prior elicitation via the prior predictive distribution</a>. arXiv:200209868 [stat]. 2020.
+</div>
+<div id="ref-perepolkin2021HybridElicitationIndirect" class="csl-entry">
+6. Perepolkin D, Goodrich B, Sahlin U. <a href="https://doi.org/10.31219/osf.io/paby6">Hybrid elicitation and indirect bayesian inference with quantile-parametrized likelihood</a>. 2021.
+</div>
+<div id="ref-crowder1992BayesianPriorsBased" class="csl-entry">
+7. Crowder M. Bayesian priors based on a parameter transformation using the distribution function. Annals of the Institute of Statistical Mathematics. 1992;44:405–16.
+</div>
+<div id="ref-elfadaly2013ElicitingDirichletConnor" class="csl-entry">
+8. Elfadaly FG, Garthwaite PH. <a href="https://doi.org/10.1007/s11749-013-0336-4">Eliciting dirichlet and connormosimann prior distributions for multinomial models</a>. TEST. 2013;22:628–46.
+</div>
+<div id="ref-keelin2011QuantileParameterizedDistributions" class="csl-entry">
+9. Keelin TW, Powley BW. <a href="https://doi.org/10.1287/deca.1110.0213">Quantile-parameterized distributions</a>. Decision Analysis. 2011;8:206–19.
+</div>
+<div id="ref-keelin2016MetalogDistributions" class="csl-entry">
+10. Keelin TW. <a href="https://doi.org/f9n7nt">The metalog distributions</a>. Decision Analysis. 2016;13:243–77.
+</div>
+<div id="ref-perepolkin2021TenetsIndirectInference" class="csl-entry">
+11. Perepolkin D, Goodrich B, Sahlin U. <a href="https://doi.org/10.31219/osf.io/enzgs">The tenets of indirect inference in bayesian models</a>. Preprint. https://osf.io/enzgs: Open Science Framework; 2021.
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+var script = document.createElement("script");
+script.type = "text/javascript";
+var src = "true";
+if (src === "" || src === "true") src = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML";
+if (location.protocol !== "file:" && /^https?:/.test(src))
+src = src.replace(/^https?:/, '');
+script.src = src;
+document.getElementsByTagName("head")[0].appendChild(script);
+})();
+</script>
+
+
+</body>
+</html>

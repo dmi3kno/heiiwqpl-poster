@@ -1,0 +1,27 @@
+/*-- scss:defaults --*/
+
+// fonts
+$presentation-font-size-root: 40px !default;
+$presentation-line-height: 1.2 !default;
+$presentation-title-slide-text-align: left !default;;
+// colors
+
+// headings
+
+/*-- scss:rules --*/
+
+.math.inline {
+  font-size: 85%  !important;
+}
+
+.math.display {
+  font-size: 85%  !important;
+}
+
+.reveal section ul {
+    font-size: 0.9em !important;
+}
+
+.reveal section table {
+    font-size: #{$presentation-font-smaller}em !important;
+}

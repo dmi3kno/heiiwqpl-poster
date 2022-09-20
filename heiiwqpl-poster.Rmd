@@ -1,0 +1,321 @@
+---
+title: Encoding and updating uncertain judgements using hybrid elicitation and quantile-parametrized distributions
+author:
+  - name: Dmytro Perepolkin
+    affil: 1
+    orcid: '0000-0001-8558-6183'
+  - name: Ullrika Sahlin
+    affil: 1
+    orcid: '0000-0002-2932-6253'
+affiliation:
+  - num: 1
+    address: Centre for Environmental and Climate Science, Lund University, Sweden
+poster_height: "46.8in"
+poster_width: "33.1in"
+primary_colour: "#2B2D42"   #"#008080"
+secondary_colour: "#9FA2B2" #"#0b4545"
+accent_colour: "#F7934C"   #"#cc0000"
+column_numbers: 3
+logoright_name: https&#58;//raw.githubusercontent.com/dmi3kno/qpd/master/data-raw/qpd_hex.png
+logoleft_name: fig/Lunds_universitet.svg.png
+title_textsize: "75pt"
+body_textsize: "40px"
+output: 
+  posterdown::posterdown_html:
+    self_contained: false
+bibliography: "`r rbbt::bbt_write_bib('heiiwqpl-poster.bib', translator='bibtex', overwrite = TRUE)`"
+csl: biomed-central.csl
+---
+
+```{r setup, include=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(qpd)
+library(tidyverse)
+# remotes::install_github('coolbutuseless/ggsvg')
+library(ggsvg)
+library(patchwork)
+library(targets)
+library(kableExtra)
+```
+
+# Introduction
+
+*Elicitation of parameters* [@garthwaite2005StatisticalMethodsEliciting; @ohagan2019ExpertKnowledgeElicitation] requires that the expert understands the model and the role a particular parameter plays in it. *Elicitation of predictions* [@kadane1998ExperiencesElicitation] mixes variability and uncertainty and, therefore, can not be used for learning from data without making additional assumptions [@akbarov2009ProbabilityElicitationPredictive; @hartmann2020FlexiblePriorElicitation]. We propose a *hybrid elicitation* approach, where elicitation of the observable quantities is accompanied by the elicitation of the uncertainty around them. Hybrid elicitation can be used to define the prior distribution for a model defined by a quantile-parametrized distribution.
+
+## Objectives
+
+1. Simplify the Bayesian prior specification by adopting a model parameterized by the quantiles of the observable quantity [@perepolkin2021HybridElicitationIndirect]
+2. Elicit the food consumption distribution with uncertainty for exposure assessment
+3. Update the expert belief with the observations of actual consumption obtained from the food consumption
+database
+
+# Materials and Methods
+
+We extracted the summary statistics for Level 5 food category from the EFSA food consumption database. The following Figure \@ref(fig:dbpoints) shows the quantile summary of the chronic consumption of bitter chocolate in Sweden for all age categories from different surveys. Each of the curves represents a predictive distribution for consumption of chocolate. 
+
+```{r dbpoints, fig.cap="EFSA Food Consumption of bitter chocolate",fig.width=10, fig.height=5}
+dbpoints_plot_data <- tar_read(chocolate_nested)  %>% 
+  mutate(pq_grd=map(mtlg_a, ~tibble::tibble(p_grd=qpd::make_pgrid(),
+                                            q_grd=qpd::qmetalog(p_grd, .x, bl=0)))) %>% 
+  select(Survey, Ncons, pq_grd) %>% 
+  unnest(cols = c(pq_grd)) 
+
+dbpoints_plot_data %>% 
+  ggplot()+
+  geom_line(aes(x=q_grd, y=p_grd, group=Survey, color=Survey, size=Ncons), alpha=0.5)+
+  geom_point(data=unnest(tar_read(chocolate_nested), cols = c(p,q)), aes(x=q, y=p, color=Survey))+
+  coord_cartesian(xlim=c(0,80))+
+  hrbrthemes::theme_ipsum_rc()+
+  scale_color_brewer(palette = "Paired") +
+  labs(title="Chronic Bitter Chocolate Consumption",
+       subtitle="Sweden, all age catgories",
+       x="Consumption, g/day",
+       y="CDF", size="# of observations",
+       caption="Source: EFSA Food Consumption Database")
+
+# for tom
+library(tidyverse)
+tar_read(chocolate_nested) %>% unnest(cols=c(p,q)) %>% 
+  select(-mtlg_a, -mtlg_v) %>% 
+  write_csv("data/chocolate_efsa_qpts.csv")
+
+tar_read(chocolate_nested) %>% unnest(cols=starts_with("mtlg")) %>% 
+  select(-p,-q) %>% write_csv("data/chocolate_efsa_mtlgs.csv")
+```
+Categories of consumers based on Swedish National Dietary Survey - Riskmaten 2010-11 are shown in Figure \@ref(fig:adults2010cats). Category cut-off points can be chosen arbitrarily off of the predictive distribution. 
+
+```{r adults2010cats, fig.cap="Consumer categories", fig.width=10, fig.height=5, out.width='100%'}
+bands_df <- tibble::tibble(x=c(0, 4,8,16,100),
+                           y_from=c(0, 0.24,0.52,0.83,1),
+                           txt_y=c(0.12, 0.36, 0.66, 0.9, NA),
+                           txt_x=36,
+                           txt=c("'Morning coffee'", "'After dinner'", "'Every meal'", "'Sweet tooth'", NA)) %>% 
+  mutate(y_to=lead(y_from),
+         x_from=min(x),
+         x_to=max(x),
+         lbl=ifelse(x==16, "16+ g/day", paste0(x,"-",lead(x), " g/day"))) %>% 
+  head(-1)
+
+
+p1 <- dbpoints_plot_data %>% 
+  filter(Survey=="(Adults, 2010)") %>% 
+  ggplot()+
+  geom_rect(data=bands_df, aes(xmin=x_from,xmax=x_to, ymin=y_from, ymax=y_to, fill=fct_inorder(lbl)), alpha=0.5)+
+  geom_vline(xintercept = c(4,8,16), size=0.5, lty=3)+
+  geom_hline(yintercept = c(0.24,0.52,0.83), size=0.25, lty=3)+
+  geom_line(aes(x=q_grd, y=p_grd, group=Survey), size=1)+
+  geom_text(data=bands_df, aes(x=txt_x, y=txt_y, label=txt, family="Roboto Condensed", fontface="italic"))+
+  coord_cartesian(xlim=c(0,40))+
+  hrbrthemes::theme_ipsum_rc(grid = FALSE)+
+  scale_x_continuous(breaks = seq(0,40, by=4))+
+  scale_fill_brewer()+
+  labs(title="Chronic Bitter Chocolate Consumption",
+       subtitle="Swedish National Dietary Survey - Riksmaten adults 2010-11",
+       x="Consumption, g/day",
+       y="CDF", fill="Consumption",
+       caption="Source: EFSA Food Consumption Database")+
+  theme(legend.position = 'bottom')
+
+
+man_url <- 'fig/man-standing-black-silhouette-svgrepo-com.svg'
+man_svg <- paste(readLines(man_url), collapse = "\n")
+
+man_df <- crossing(y=seq(0,9, by=1)+0.5,
+  x=seq(0,9, by=1)+0.5) %>%
+  rowid_to_column() %>% 
+  mutate(colr=rowid<25)
+
+p2 <- ggplot(man_df) + 
+  geom_point_svg(
+    aes(x, y, css("path",fill = as.factor(colr))), 
+    svg = man_svg, 
+    size = 4) + 
+  scale_svg_fill_brewer(aesthetics = css("path", fill=as.factor(colr)), guide="none") + 
+  coord_cartesian(xlim = c(0,10), ylim = c(10,0))+
+  hrbrthemes::theme_ipsum_rc(grid=FALSE)+
+  labs(subtitle="'Morning coffee' consumers")+
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank(),
+        axis.title.y = element_blank(), axis.text.y = element_blank())
+patchwork::wrap_plots(p1,p2, nrow = 1, widths = c(3.5,1))
+```
+
+We elicited the uncertainty in the cumulative probabilities associated with the fixed quantiles [@crowder1992BayesianPriorsBased] using the icon arrays.
+
+> **Interviewer:** Consider a sample of bitter chocolate consumers, say 100 people. According to your assessment there should be only 24 people that consume up to one bit of chocolate a day. We will interpret this assessment as you
+believing that there’s about equal chance that the actual number of *morning coffee* consumers (0-4 g/day) in this sample will be above or below 24, i.e we will interpret it as the median assessment. Would you like to reconsider this value?
+
+We adopt the approach described by [@elfadaly2013ElicitingDirichletConnor] for eliciting the uncertainty in the probabilities related to a categorical variable to infer the parameter vector(s) of Dirichlet (or Connor-Mosimann) distribution. In this method the expert assesses the quartiles of the probability for each category using the symmetric percentile triplet elicitation. Elicited uncertainty in the category counts out of hypothetical sample of 100 people were recorded in Table \@ref(tab:eliciteddata).
+
+```{r eliciteddata}
+tar_read(elicited_data) %>% 
+  mutate(CDFprobtxt=paste0("P",CDFprob*100)) %>% 
+  pivot_wider(id_cols=c(cat_idx, cat), names_from = CDFprobtxt, values_from = count) %>% 
+  kableExtra::kbl(booktabs=TRUE, linesep = "", escape = FALSE,
+    caption="Elicited consumer counts by category",
+    col.names = c(cat_idx="", cat="Category", P25="P25", P50="P50", P75="P75")) %>%
+  kable_styling(full_width = TRUE,  html_font = "Cambria") %>% 
+  footnote(symbol=c("All consumer counts are out of a sample of 100"))
+# for tom
+tar_read(elicited_data) %>% write_csv("data/elicited_data.csv")            
+```
+
+We encoded the elicited uncertainties in the cumulative probabilities by category into the hyperparameter vector of a Dirichlet distribution using the conditional univariate beta distributions [@elfadaly2013ElicitingDirichletConnor]. The resulting Dirichlet distribution can be used as a prior for the model parametrized by quantiles.
+
+Quantile-parameterized distributions (QPDs) are parameterized by a set of quantile-probability pairs (quantile-probability tuple, QPT) describing an observable [@keelin2011QuantileParameterizedDistributions;@keelin2016MetalogDistributions]. Uncertainty about the quantiles was updated using Bayesian inference [@perepolkin2021TenetsQuantilebasedInference].
+
+```{r prior-cdf, echo=FALSE , fig.width=10, fig.height=5, fig.cap="Prior draws from elicited QDirichlet distribution", out.width='100%'}
+N <-1300
+q_star <- c(4,8,16)
+dir_par <- tar_read(dir_df)
+p_grd <- make_pgrid(100)
+
+set.seed(42)
+prior_met <- qpd::rdir(N,dir_par$a) %>% 
+  isim_to_cprob(dir_par$cat_idx) %>% 
+  apply(1, function(p) qpd::fit_metalog(p, q_star, bl=0)) %>% t()
+
+valid_mtlgs <- tibble::tibble(.draw=seq_len(N)) %>% 
+  mutate(metlg=map(.draw, ~prior_met[.x,])) %>% 
+  mutate(vald=map_lgl(metlg, qpd::is_metalog_valid, bl=0, n_grid=1000, s_grid=1)) %>% 
+  filter(vald) 
+  
+prp_mtlg_plot_data <- valid_mtlgs %>% 
+  mutate(drws=map(metlg, 
+            ~tibble::tibble(p_grd=p_grd,
+                            q_grd=qpd::qmetalog(p_grd, .x, bl=0),
+                            d_grd=qpd::dqmetalog(p_grd, .x, bl=0))
+            )) %>% 
+  unnest(drws) 
+
+p1 <- prp_mtlg_plot_data %>% 
+  ggplot()+
+  geom_line(aes(x=q_grd, y=p_grd, group=.draw), alpha=0.01)+
+  coord_cartesian(xlim = c(0,50), expand = FALSE)+
+  scale_x_continuous(breaks = seq(0,50, by=10))+
+  hrbrthemes::theme_ipsum_rc(grid=FALSE)+
+  labs(title="Chronic Bitter Chocolate Consumption",
+       subtitle="Prior predictive draws",
+       x="Consumption, g/day",
+       y="CDF", caption="Simulated from the elicited Dirichlet distribution")
+
+p2 <- prp_mtlg_plot_data %>% 
+  ggplot()+
+  geom_line(aes(x=q_grd, y=d_grd, group=.draw), alpha=0.01)+
+  coord_cartesian(xlim = c(0,50), ylim=c(0,0.2), expand = FALSE)+
+  scale_x_continuous(breaks = seq(0,50, by=10))+
+  hrbrthemes::theme_ipsum_rc(grid=FALSE)+
+  labs(#title="Chronic Bitter Chocolate Consumption",
+       #subtitle="Prior predictive draws",
+       x="Consumption, g/day",
+       y="PDF", caption="Simulated from the elicited Dirichlet distribution")
+
+p3 <- valid_mtlgs %>% 
+  mutate(qntls=map(metlg,
+                   ~tibble::tibble(P=c(0.05, 0.5, 0.95),
+                                   cat=c("Low Consumer","Median Consumer", "High Consumer"),
+                                   Q=qmetalog(P, .x, bl=0)))) %>% 
+   unnest(qntls) %>% 
+  filter(Q<200) %>% 
+  ggplot(aes(x=Q, y=fct_inorder(cat)))+
+  ggdist::stat_halfeye(adjust=0.5, justification=-.12, .width=0, point_colour=NA)+
+  geom_boxplot(width=.12, outlier.color = NA, alpha=0.01)+
+  ggdist::stat_dots(side="left", justification=1.12, dotsize=50)+
+  #coord_cartesian(xlim = c(0,100), expand=FALSE)+
+  #scale_x_continuous(breaks = seq(0,100, by=10))+
+  hrbrthemes::theme_ipsum_rc(grid=FALSE)+
+  facet_wrap(vars(fct_inorder(cat)), ncol=1, scales = "free")+
+  labs(y=NULL, x="Consumption, g/day",
+       caption="Low and high consumer represents 0.05 and 0.95 quantile, respectively")+
+  theme(strip.text = element_blank())
+
+patchwork::wrap_plots(p1, p2, nrow = 1, widths = c(1,1))
+# for tom
+tar_read(dir_df) %>% write_csv("data/dirichlet_df.csv")
+```
+
+Estimates of consumption by a median and a high consumer can be extracted from the posterior food consumption distribution together with uncertainty in these estimates, which can be used in exposure assessment (see Figures \@ref(fig:prior-cdf) and \@ref(fig:posterior-cdf)).
+
+# Results and discussion
+
+The hybrid elicitation consists of two phases: elicitation of the quantile values $q$ and elicitation of uncertainty in the cumulative probabilities associated with them (i.e. possible vectors of $p$ which could correspond to the specified vector $q$).
+The hyperparameter vector $q$ specifies the location of the QDirichlet prior, while the hyperparameter vector $\alpha$ is responsible for defining its shape.
+
+The parameter vector of Dirichlet distribution combined with the vector of elicited quantiles act as hyper-parameters of the proposed QDirichlet prior, which describes the uncertainty in the parameters of the quantile-parameterized model \@ref(eq:QDirMetModelEq).
+
+$$
+\begin{gathered}
+\Delta \sim Dirichlet(\alpha|q); \\
+p=\Large{\Xi}\normalsize_1^n(\Delta);\\
+u =\widehat F_{M_n}(x|p,q);\\
+u \sim f(Q_{M_n}(p,q))
+\end{gathered}
+(\#eq:QDirMetModelEq)
+$$
+where $\Delta$ is a simplex of size $n+1$, $\Large{\Xi}\normalsize_1^n()$ is the cumulative sum operator, $p$ is a size-$n$ tuple of cumulative probabilities, $q$ is the size-$n$ vector of quantiles, corresponding to the cumulative probabilities $p$, $u$ is the depth corresponding to the observable $x$ given the parameterizing QPT $\{p,q\}$, $\widehat F_{M_n}(x|p,q)$ is the approximated CDF of the metalog distribution, represented by the numerically inverted $\widehat{Q}^{-1}_{M_n}(x|p,q)$), indirectly parameterized by $\{p,q\}_n$ via the vector of metalog coefficients $a$, and $f(Q_{M_n}(u|p,q))=[q_{M_n}(u|p,q)]^{-1}$ is the metalog density quantile function (DQF).
+
+Posterior predictive check shows significant reduction of uncertainty about the consumption of bitter chocolate.
+
+```{r posterior-cdf, echo=FALSE , fig.width=10, fig.height=5, fig.cap="Posterior draws from QDirichlet-Metalog model", out.width='100%'}
+draws_as_df <- tar_read(draws_as_df) %>% slice_sample(n=1000)
+choc_obs <- tar_read(choc_obs_df) %>%  unnest(obs) %>%  pull()
+p_grd <- make_pgrid(100)
+
+pp_mtlg_plot_data <- draws_as_df %>% 
+  mutate(xs=map(as, ~tibble::tibble(y=p_grd,
+                                    x=qmetalog(y, .x, bl=0),
+                                    d=dqmetalog(y, .x, bl=0)))) %>% 
+  unnest(xs)
+
+p1 <-  pp_mtlg_plot_data %>% 
+  ggplot()+
+  stat_ecdf(data=enframe(choc_obs), aes(x=value), lwd=1, color="#2B2D42")+
+  geom_line(aes(x=x, y=y, group=.draw), alpha=0.01)+
+  hrbrthemes::theme_ipsum_rc(grid = FALSE)+
+  coord_cartesian(xlim = c(0,50), expand=FALSE)+
+  scale_x_continuous(breaks = seq(0,50, by=10))+
+  labs(title="Chronic Bitter Chocolate Consumption",
+       subtitle="Posterior draws and data from Riksmaten 2016 for adolescents",
+       x="Consumption, g/day",
+       y="CDF", caption="*Simulated from the quantiles reported in EFSA Food Consumption Database")
+
+p2 <- pp_mtlg_plot_data %>% 
+  ggplot()+
+  geom_line(aes(x=x, y=d, group=.draw), alpha=0.01)+
+  coord_cartesian(xlim = c(0,50), ylim=c(0,0.2), expand = FALSE)+
+  scale_x_continuous(breaks = seq(0,50, by=10))+
+  hrbrthemes::theme_ipsum_rc(grid=FALSE)+
+  labs(#title="Chronic Bitter Chocolate Consumption",
+       #subtitle="Prior predictive draws",
+       x="Consumption, g/day",
+       y="PDF", caption="Simulated from the elicited Dirichlet distribution")
+
+p3 <- draws_as_df %>% 
+  #slice(1:1000) %>% 
+  mutate(cons=map(as, ~ tibble::tibble(P=c(0.05, 0.5, 0.95),
+                                       cat=c("Low Consumer","Median Consumer", "High Consumer"),
+                                       Q=qmetalog(P, .x, bl=0)))) %>% 
+  unnest(cons) %>% 
+  ggplot(aes(x=Q, y=fct_inorder(cat)))+
+  ggdist::stat_halfeye(adjust=0.5, justification=-.12, point_colour=NA)+
+  geom_boxplot(width=.12, outlier.color = NA, alpha=0.5)+
+  ggdist::stat_dots(side="left", justification=1.12, dotsize=50)+
+  #coord_cartesian(xlim = c(0,100), expand=FALSE)+
+  #scale_x_continuous(breaks = seq(0,100, by=10))+
+  hrbrthemes::theme_ipsum_rc(grid=FALSE)+
+  facet_wrap(vars(fct_inorder(cat)), ncol=1, scales = "free")+
+  labs(y=NULL, x="Consumption, g/day",
+       caption="Low and high consumer represents 0.05 and 0.95 quantile, respectively")+
+  theme(strip.text = element_blank())
+
+  
+
+patchwork::wrap_plots(p1, p2, nrow = 1, widths = c(1,1))
+```
+
+# Conclusion
+
+Asking experts to provide their uncertainty about the elicited QPT is enough to quantify the uncertainty about the food consumption distribution. This approach is particularly useful when the food consumption data is sparse.
+
+*Hybrid elicitation*, like *predictive elicitation*, describes only observable quantities. At the same time, like *parametric elicitation*, the hybrid approach results in the characterization of uncertainty in the model parameters. Hybrid elicitation, therefore, can be viewed as observations-level parametric elicitation for quantile-parameterized models [@perepolkin2021HybridElicitationIndirect].
+
+# References

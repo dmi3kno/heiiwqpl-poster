@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<script src="biwqpd-slides_files/libs/clipboard/clipboard.min.js"></script>
+<script src="biwqpd-slides_files/libs/quarto-html/tabby.min.js"></script>
+<script src="biwqpd-slides_files/libs/quarto-html/popper.min.js"></script>
+<script src="biwqpd-slides_files/libs/quarto-html/tippy.umd.min.js"></script>
+<link href="biwqpd-slides_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="biwqpd-slides_files/libs/quarto-html/quarto-html.min.css" rel="stylesheet" data-mode="light">
+<link href="biwqpd-slides_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-99.9.9">
+
+  <meta name="author" content="Dmytro Perepolkin PhD student, CEC">
+  <meta name="dcterms.date" content="2022-09-19">
+  <title>Bayesian Inference with Quantile-Parameterized Distributions</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="biwqpd-slides_files/libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="biwqpd-slides_files/libs/revealjs/dist/reveal.css">
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: 1;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      { color: #003b4f; background-color: #f1f3f5; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span { color: #003b4f; } /* Normal */
+    code span.al { color: #ad0000; } /* Alert */
+    code span.an { color: #5e5e5e; } /* Annotation */
+    code span.at { color: #657422; } /* Attribute */
+    code span.bn { color: #ad0000; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #003b4f; } /* ControlFlow */
+    code span.ch { color: #20794d; } /* Char */
+    code span.cn { color: #8f5902; } /* Constant */
+    code span.co { color: #5e5e5e; } /* Comment */
+    code span.cv { color: #5e5e5e; font-style: italic; } /* CommentVar */
+    code span.do { color: #5e5e5e; font-style: italic; } /* Documentation */
+    code span.dt { color: #ad0000; } /* DataType */
+    code span.dv { color: #ad0000; } /* DecVal */
+    code span.er { color: #ad0000; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #ad0000; } /* Float */
+    code span.fu { color: #4758ab; } /* Function */
+    code span.im { color: #00769e; } /* Import */
+    code span.in { color: #5e5e5e; } /* Information */
+    code span.kw { color: #003b4f; } /* Keyword */
+    code span.op { color: #5e5e5e; } /* Operator */
+    code span.ot { color: #003b4f; } /* Other */
+    code span.pp { color: #ad0000; } /* Preprocessor */
+    code span.sc { color: #5e5e5e; } /* SpecialChar */
+    code span.ss { color: #20794d; } /* SpecialString */
+    code span.st { color: #20794d; } /* String */
+    code span.va { color: #111111; } /* Variable */
+    code span.vs { color: #20794d; } /* VerbatimString */
+    code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
+    div.csl-bib-body { }
+    div.csl-entry {
+      clear: both;
+    }
+    .hanging div.csl-entry {
+      margin-left:2em;
+      text-indent:-2em;
+    }
+    div.csl-left-margin {
+      min-width:2em;
+      float:left;
+    }
+    div.csl-right-inline {
+      margin-left:2em;
+      padding-left:1em;
+    }
+    div.csl-indent {
+      margin-left: 2em;
+    }
+  </style>
+  <link rel="stylesheet" href="biwqpd-slides_files/libs/revealjs/dist/theme/quarto.css" id="theme">
+  <link href="biwqpd-slides_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="biwqpd-slides_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="biwqpd-slides_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="biwqpd-slides_files/libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <style type="text/css">
+
+  .callout {
+    margin-top: 1em;
+    margin-bottom: 1em;  
+    border-radius: .25rem;
+  }
+
+  .callout.callout-style-simple { 
+    padding: 0em 0.5em;
+    border-left: solid #acacac .3rem;
+    border-right: solid 1px silver;
+    border-top: solid 1px silver;
+    border-bottom: solid 1px silver;
+    display: flex;
+  }
+
+  .callout.callout-style-default {
+    border-left: solid #acacac .3rem;
+    border-right: solid 1px silver;
+    border-top: solid 1px silver;
+    border-bottom: solid 1px silver;
+  }
+
+  .callout .callout-body-container {
+    flex-grow: 1;
+  }
+
+  .callout.callout-style-simple .callout-body {
+    font-size: 1rem;
+    font-weight: 400;
+  }
+
+  .callout.callout-style-default .callout-body {
+    font-size: 0.9rem;
+    font-weight: 400;
+  }
+
+  .callout.callout-captioned.callout-style-simple .callout-body {
+    margin-top: 0.2em;
+  }
+
+  .callout:not(.callout-captioned) .callout-body {
+      display: flex;
+  }
+
+  .callout:not(.no-icon).callout-captioned.callout-style-simple .callout-content {
+    padding-left: 1.6em;
+  }
+
+  .callout.callout-captioned .callout-header {
+    padding-top: 0.2em;
+    margin-bottom: -0.2em;
+  }
+
+  .callout.callout-captioned .callout-caption  p {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+  }
+    
+  .callout.callout-captioned.callout-style-simple .callout-content  p {
+    margin-top: 0;
+  }
+
+  .callout.callout-captioned.callout-style-default .callout-content  p {
+    margin-top: 0.7em;
+  }
+
+  .callout.callout-style-simple div.callout-caption {
+    border-bottom: none;
+    font-size: .9rem;
+    font-weight: 600;
+    opacity: 75%;
+  }
+
+  .callout.callout-style-default  div.callout-caption {
+    border-bottom: none;
+    font-weight: 600;
+    opacity: 85%;
+    font-size: 0.9rem;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+  }
+
+  .callout.callout-style-default div.callout-content {
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+  }
+
+  .callout.callout-style-simple .callout-icon::before {
+    height: 1rem;
+    width: 1rem;
+    display: inline-block;
+    content: "";
+    background-repeat: no-repeat;
+    background-size: 1rem 1rem;
+  }
+
+  .callout.callout-style-default .callout-icon::before {
+    height: 0.9rem;
+    width: 0.9rem;
+    display: inline-block;
+    content: "";
+    background-repeat: no-repeat;
+    background-size: 0.9rem 0.9rem;
+  }
+
+  .callout-caption {
+    display: flex
+  }
+    
+  .callout-icon::before {
+    margin-top: 1rem;
+    padding-right: .5rem;
+  }
+
+  .callout.no-icon::before {
+    display: none !important;
+  }
+
+  .callout.callout-captioned .callout-body > .callout-content > :last-child {
+    margin-bottom: 0.5rem;
+  }
+
+  .callout.callout-captioned .callout-icon::before {
+    margin-top: .5rem;
+    padding-right: .5rem;
+  }
+
+  .callout:not(.callout-captioned) .callout-icon::before {
+    margin-top: 1rem;
+    padding-right: .5rem;
+  }
+
+  /* Callout Types */
+
+  div.callout-note {
+    border-left-color: #4582ec !important;
+  }
+
+  div.callout-note .callout-icon::before {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAIKADAAQAAAABAAAAIAAAAACshmLzAAAEU0lEQVRYCcVXTWhcVRQ+586kSUMMxkyaElstCto2SIhitS5Ek8xUKV2poatCcVHtUlFQk8mbaaziwpWgglJwVaquitBOfhQXFlqlzSJpFSpIYyXNjBNiTCck7x2/8/LeNDOZxDuEkgOXe++553zfefee+/OYLOXFk3+1LLrRdiO81yNqZ6K9cG0P3MeFaMIQjXssE8Z1JzLO9ls20MBZX7oG8w9GxB0goaPrW5aNMp1yOZIa7Wv6o2ykpLtmAPs/vrG14Z+6d4jpbSKuhdcSyq9wGMPXjonwmESXrriLzFGOdDBLB8Y6MNYBu0dRokSygMA/mrun8MGFN3behm6VVAwg4WR3i6FvYK1T7MHo9BK7ydH+1uurECoouk5MPRyVSBrBHMYwVobG2aOXM07sWrn5qgB60rc6mcwIDJtQrnrEr44kmy+UO9r0u9O5/YbkS9juQckLed3DyW2XV/qWBBB3ptvI8EUY3I9p/67OW+g967TNr3Sotn3IuVlfMLVnsBwH4fsnebJvyGm5GeIUA3jljERmrv49SizPYuq+z7c2H/jlGC+Ghhupn/hcapqmcudB9jwJ/3jvnvu6vu5lVzF1fXyZuZZ7U8nRmVzytvT+H3kilYvH09mLWrQdwFSsFEsxFVs5fK7A0g8gMZjbif4ACpKbjv7gNGaD8bUrlk8x+KRflttr22JEMRUbTUwwDQScyzPgedQHZT0xnx7ujw2jfVfExwYHwOsDTjLdJ2ebmeQIlJ7neo41s/DrsL3kl+W2lWvAga0tR3zueGr6GL78M3ifH0rGXrBC2aAR8uYcIA5gwV8zIE8onoh8u0Fca/ciF7j1uOzEnqcIm59sEXoGc0+z6+H45V1CvAvHcD7THztu669cnp+L0okAeIc6zjbM/24LgGM1gZk7jnRu1aQWoU9sfUOuhrmtaPIO3YY1KLLWZaEO5TKUbMY5zx8W9UJ6elpLwKXbsaZ4EFl7B4bMtDv0iRipKoDQT2sNQI9b1utXFdYisi+wzZ/ri/1m7QfDgEuvgUUEIJPq3DhX/5DWNqIXDOweC2wvIR90Oq3lDpdMIgD2r0dXvGdsEW5H6x6HLRJYU7C69VefO1x8Gde1ZFSJLfWS1jbCnhtOPxmpfv2LXOA2Xk2tvnwKKPFuZ/oRmwBwqRQDcKNeVQkYcOjtWVBuM/JuYw5b6isojIkYxyYAFn5K7ZBF10fea52y8QltAg6jnMqNHFBmGkQ1j+U43HMi2xMar1Nv0zGsf1s8nUsmUtPOOrbFIR8bHFDMB5zL13Gmr/kGlCkUzedTzzmzsaJXhYawnA3UmARpiYj5ooJZiUoxFRtK3X6pgNPv+IZVPcnwbOl6f+aBaO1CNvPW9n9LmCp01nuSaTRF2YxHqZ8DYQT6WsXT+RD6eUztwYLZ8rM+rcPxamv1VQzFUkzFXvkiVrySGQgJNvXHJAxiU3/NwiC03rSf05VBaPtu/Z7/B8Yn/w7eguloAAAAAElFTkSuQmCC');
+  }
+
+  div.callout-note.callout-style-default .callout-caption {
+    background-color: #dae6fb
+  }
+
+  div.callout-important {
+    border-left-color: #d9534f !important;
+  }
+
+  div.callout-important .callout-icon::before {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAIKADAAQAAAABAAAAIAAAAACshmLzAAAEKklEQVRYCcVXTWhcVRS+575MJym48A+hSRFr00ySRQhURRfd2HYjk2SSTokuBCkU2o0LoSKKraKIBTcuFCoidGFD08nkBzdREbpQ1EDNIv8qSGMFUboImMSZd4/f9zJv8ibJMC8xJQfO3HPPPef7zrvvvnvviIkpC9nsw0UttFunbUhpFzFtarSd6WJkStVMw5xyVqYTvkwfzuf/5FgtkVoB0729j1rjXwThS7Vio+Mo6DNnvLfahoZ+i/o32lULuJ3NNiz7q6+pyAUkJaFF6JwaM2lUJlV0MlnQn5aTRbEu0SEqHUa0A4AdiGuB1kFXRfVyg5d87+Dg4DL6m2TLAub60ilj7A1Ec4odSAc8X95sHh7+ZRPCFo6Fnp7HfU/fBng/hi10CjCnWnJjsxvDNxWw0NfV6Rv5GgP3I3jGWXumdTD/3cbEOP2ZbOZp69yniG3FQ9z1jD7bnBu9Fc2tKGC2q+uAJOQHBDRiZX1x36o7fWBs7J9ownbtO+n0/qWkvW7UPIfc37WgT6ZGR++EOJyeQDSb9UB+DZ1G6DdLDzyS+b/kBCYGsYgJbSQHuThGKRcw5xdeQf8YdNHsc6ePXrlSYMBuSIAFTGAtQo+VuALo4BX83N190NWZWbynBjhOHsmNfFWLeL6v+ynsA58zDvvAC8j5PkbOcXCMg2PZFk3q8MjI7WAG/Dp9AwP7jdGBOOQkAvlFUB+irtm16I1Zw9YBcpGTGXYmk3kQIC/Cds55l+iMI3jqhjAuaoe+am2Jw5GT3Nbz3CkE12NavmzN5+erJW7046n/CH1RO/RVa8lBLozXk9uqykkGAyRXLWlLv5jyp4RFsG5vGVzpDLnIjTWgnRy2Rr+tDKvRc7Y8AyZq10jj8DqXdnIRNtFZb+t/ZRtXcDiVnzpqx8mPcDWxgARUqx0W1QB9MeUZiNrV4qP+Ehc+BpNgATsTX8ozYKL2NtFYAHc84fG7ndxUPr+AR/iQSns7uSUufAymwDOb2+NjK27lEFocm/EE2WpyIy/Hi66MWuMKJn8RvxIcj87IM5Vh9663ziW36kR0HNenXuxmfaD8JC7tfKbrhFr7LiZCrMjrzTeGx+PmkosrkNzW94ObzwocJ7A1HokLolY+AvkTiD/q1H0cN48c5EL8Crkttsa/AXQVDmutfyku0E7jShx49XqV3MFK8IryDhYVbj7Sj2P2eBxwcXoe8T8idsKKPRcnZw1b+slFTubwUwhktrfnAt7J++jwQtLZcm3sr9LQrjRzz6cfMv9aLvgmnAGvpoaGLxM4mAEaLV7iAzQ3oU0IvD5x9ix3yF2RAAuYAOO2f7PEFWCXZ4C9Pb2UsgDeVnFSpbFK7/IWu7TPTvBqzbGdCHOJQSxiEjt6IyZmxQyEJHv6xyQsYk//moVFsN2zP6fRImjfq7/n/wFDguUQFNEwugAAAABJRU5ErkJggg==');
+  }
+
+  div.callout-important.callout-style-default .callout-caption {
+    background-color: #f7dddc
+  }
+
+  div.callout-warning {
+    border-left-color: #f0ad4e !important;
+  }
+
+  div.callout-warning .callout-icon::before {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAIKADAAQAAAABAAAAIAAAAACshmLzAAAETklEQVRYCeVWW2gcVRg+58yaTUnizqbipZeX4uWhBEniBaoUX1Ioze52t7sRq6APio9V9MEaoWlVsFasRq0gltaAPuxms8lu0gcviE/FFOstVbSIxgcv6SU7EZqmdc7v9+9mJtNks51NTUH84ed889/PP+cmxP+d5FIbMJmNbpREu4WUkiTtCicKny0l1pIKmBzovF2S+hIJHX8iEu3hZJ5lNZGqyRrGSIQpq15AzF28jgpeY6yk6GVdrfFqdrD6Iw+QlB8g0YS2g7dyQmXM/IDhBhT0UCiRf59lfqmmDvzRt6kByV/m4JjtzuaujMUM2c5Z2d6JdKrRb3K2q6mA+oYVz8JnDdKPmmNthzkAk/lN63sYPgevrguc72aZX/L9C6x09GYyxBgCX4NlvyGUHOKELlm5rXeR1kchuChJt4SSwyddZRXgvwMGvYo4QSlk3/zkHD8UHxwVJA6zjZZqP8v8kK8OWLnIZtLyCAJagYC4rTGW/9Pqj92N/c+LUaAj27movwbi19tk/whRCIE7Q9vyI6yvRpftAKVTdUjOW40X3h5OXsKCdmFcx0xlLJoSuQngnrJe7Kcjm4OMq9FlC7CMmScQANuNvjfP3PjGXDBaUQmbp296S5L4DrpbrHN1T87ZVEZVCzg1FF0Ft+dKrlLukI+/c9ENo+TvlTDbYFvuKPtQ9+l052rXrgKoWkDAFnvh0wTOmYn8R5f4k/jN/fZiCM1tQx9jQQ4ANhqG4hiL0qIFTGViG9DKB7GYzgubnpofgYRwO+DFjh0Zin2m4b/97EDkXkc+f6xYAPX0KK2I/7fUQuwzuwo/L3AkcjugPNixC8cHf0FyPjWlItmLxWw4Ou9YsQCr5fijMGoD/zpdRy95HRysyXA74MWOnscpO4j2y3HAVisw85hX5+AFBRSHt4ShfLFkIMXTqyKFc46xdzQM6XbAi702a7sy04J0+feReMFKp5q9esYLCqAZYw/k14E/xcLLsFElaornTuJB0svMuJINy8xkIYuL+xPAlWRceH6+HX7THJ0djLUom46zREu7tTkxwmf/FdOZ/sh6Q8qvEAiHpm4PJ4a/doJe0gH1t+aHRgCzOvBvJedEK5OFE5jpm4AGP2a8Dxe3gGJ/pAutug9Gp6he92CsSsWBaEcxGx0FHytmIpuqGkOpldqNYQK8cSoXvd+xLxXADw0kf6UkJNFtdo5MOgaLjiQOQHcn+A6h5NuL2s0qsC2LOM75PcF3yr5STuBSAcGG+meA14K/CI21HcS4LBT6tv0QAh8Dr5l93AhZzG5ZJ4VxAqdZUEl9z7WJ4aN+svMvwHHL21UKTd1mqvChH7/Za5xzXBBKrUcB0TQ+Ulgkfbi/H/YT5EptrGzsEK7tR1B7ln9BBwckYfMiuSqklSznIuoIIOM42MQO+QnduCoFCI0bpkzjCjddHPN/F+2Yu+sd9bKNpVwHhbS3LluK/0zgfwD0xYI5dXuzlQAAAABJRU5ErkJggg==');
+  }
+
+  div.callout-warning.callout-style-default .callout-caption {
+    background-color: #fcefdc
+  }
+
+  div.callout-tip {
+    border-left-color: #02b875 !important;
+  }
+
+  div.callout-tip .callout-icon::before {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAIKADAAQAAAABAAAAIAAAAACshmLzAAADr0lEQVRYCe1XTWgTQRj9ZjZV8a9SPIkKgj8I1bMHsUWrqYLVg4Ue6v9BwZOxSYsIerFao7UiUryIqJcqgtpimhbBXoSCVxUFe9CTiogUrUp2Pt+3aUI2u5vdNh4dmMzOzHvvezuz8xNFM0mjnbXaNu1MvFWRXkXEyE6aYOYJpdW4IXuA4r0fo8qqSMDBU0v1HJUgVieAXxzCsdE/YJTdFcVIZQNMyhruOMJKXYFoLfIfIvVIMWdsrd+Rpd86ZmyzzjJmLStqRn0v8lzkb4rVIXvnpScOJuAn2ACC65FkPzEdEy4TPWRLJ2h7z4cArXzzaOdKlbOvKKX25Wl00jSnrwVxAg3o4dRxhO13RBSdNvH0xSARv3adTXbBdTf64IWO2vH0LT+cv4GR1DJt+DUItaQogeBX/chhbTBxEiZ6gftlDNXTrvT7co4ub5A6gp9HIcHvzTa46OS5fBeP87Qm0fQkr4FsYgVQ7Qg+ZayaDg9jhg1GkWj8RG6lkeSacrrHgDaxdoBiZPg+NXV/KifMuB6//JmYH4CntVEHy/keA6x4h4CU5oFy8GzrBS18cLJMXcljAKB6INjWsRcuZBWVaS3GDrqB7rdapVIeA+isQ57Eev9eCqzqOa81CY05VLd6SamW2wA2H3SiTbnbSxmzfp7WtKZkqy4mdyAlGx7ennghYf8voqp9cLSgKdqNfa6RdRsAAkPwRuJZNbpByn+RrJi1RXTwdi8RQF6ymDwGMAtZ6TVE+4uoKh+MYkcLsT0Hk8eAienbiGdjJHZTpmNjlbFJNKDVAp2fJlYju6IreQxQ08UJDNYdoLSl6AadO+fFuCQqVMB1NJwPm69T04Wv5WhfcWyfXQB+wXRs1pt+nCknRa0LVzSA/2B+a9+zQJadb7IyyV24YAxKp2Jqs3emZTuNnKxsah+uabKbMk7CbTgJx/zIgQYErIeTKRQ9yD9wxVof5YolPHqaWo7TD6tJlh7jQnK5z2n3+fGdggIOx2kaa2YI9QWarc5Ce1ipNWMKeSG4DysFF52KBmTNMmn5HqCFkwy34rDg05gDwgH3bBi+sgFhN/e8QvRn8kbamCOhgrZ9GJhFDgfcMHzFb6BAtjKpFhzTjwv1KCVuxHvCbsSiEz4CANnj84cwHdFXAbAOJ4LTSAawGWFn5tDhLMYz6nWeU2wJfIhmIJBefcd/A5FWQWGgrWzyORZ3Q6HuV+Jf0Bj+BTX69fm1zWgK7By1YTXchFDORywnfQ7GpzOo6S+qECrsx2ifVQAAAABJRU5ErkJggg==');
+  }
+
+  div.callout-tip.callout-style-default .callout-caption {
+    background-color: #ccf1e3
+  }
+
+  div.callout-caution {
+    border-left-color: #fd7e14 !important;
+  }
+
+  div.callout-caution .callout-icon::before {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAIKADAAQAAAABAAAAIAAAAACshmLzAAACV0lEQVRYCdVWzWoUQRCuqp2ICBLJXgITZL1EfQDBW/bkzUMUD7klD+ATSHBEfAIfQO+iXsWDxJsHL96EHAwhgzlkg8nBg25XWb0zIb0zs9muYYWkoKeru+vn664fBqElyZNuyh167NXJ8Ut8McjbmEraKHkd7uAnAFku+VWdb3reSmRV8PKSLfZ0Gjn3a6Xlcq9YGb6tADjn+lUfTXtVmaZ1KwBIvFI11rRXlWlatwIAAv2asaa9mlB9wwygiDX26qaw1yYPzFXg2N1GgG0FMF8Oj+VIx7E/03lHx8UhvYyNZLN7BwSPgekXXLribw7w5/c8EF+DBK5idvDVYtEEwMeYefjjLAdEyQ3M9nfOkgnPTEkYU+sxMq0BxNR6jExrAI31H1rzvLEfRIdgcv1XEdj6QTQAS2wtstEALLG1yEZ3QhH6oDX7ExBSFEkFINXH98NTrme5IOaaA7kIfiu2L8A3qhH9zRbukdCqdsA98TdElyeMe5BI8Rs2xHRIsoTSSVFfCFCWGPn9XHb4cdobRIWABNf0add9jakDjQJpJ1bTXOJXnnRXHRf+dNL1ZV1MBRCXhMbaHqGI1JkKIL7+i8uffuP6wVQAzO7+qVEbF6NbS0LJureYcWXUUhH66nLR5rYmva+2tjRFtojkM2aD76HEGAD3tPtKM309FJg5j/K682ywcWJ3PASCcycH/22u+Bh7Aa0ehM2Fu4z0SAE81HF9RkB21c5bEn4Dzw+/qNOyXr3DCTQDMBOdhi4nAgiFDGCinIa2owCEChUwD8qzd03PG+qdW/4fDzjUMcE1ZpIAAAAASUVORK5CYII=');
+  }
+
+  div.callout-caution.callout-style-default .callout-caption {
+    background-color: #ffe5d0
+  }
+
+  </style>
+  <style type="text/css">
+    .reveal div.sourceCode {
+      margin: 0;
+      overflow: auto;
+    }
+    .reveal div.hanging-indent {
+      margin-left: 1em;
+      text-indent: -1em;
+    }
+    .reveal .slide:not(.center) {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide.scrollable {
+      overflow-y: auto;
+    }
+    .reveal .footnotes {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide .absolute {
+      position: absolute;
+      display: block;
+    }
+    .reveal .footnotes ol {
+      counter-reset: ol;
+      list-style-type: none; 
+      margin-left: 0;
+    }
+    .reveal .footnotes ol li:before {
+      counter-increment: ol;
+      content: counter(ol) ". "; 
+    }
+    .reveal .footnotes ol li > p:first-child {
+      display: inline-block;
+    }
+    .reveal .slide ul,
+    .reveal .slide ol {
+      margin-bottom: 0.5em;
+    }
+    .reveal .slide ul li,
+    .reveal .slide ol li {
+      margin-top: 0.4em;
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide ul[role="tablist"] li {
+      margin-bottom: 0;
+    }
+    .reveal .slide ul li > *:first-child,
+    .reveal .slide ol li > *:first-child {
+      margin-block-start: 0;
+    }
+    .reveal .slide ul li > *:last-child,
+    .reveal .slide ol li > *:last-child {
+      margin-block-end: 0;
+    }
+    .reveal .slide .columns:nth-child(3) {
+      margin-block-start: 0.8em;
+    }
+    .reveal blockquote {
+      box-shadow: none;
+    }
+    .reveal .tippy-content>* {
+      margin-top: 0.2em;
+      margin-bottom: 0.7em;
+    }
+    .reveal .tippy-content>*:last-child {
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide > img.stretch.quarto-figure-center,
+    .reveal .slide > img.r-stretch.quarto-figure-center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-left,
+    .reveal .slide > img.r-stretch.quarto-figure-left  {
+      display: block;
+      margin-left: 0;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-right,
+    .reveal .slide > img.r-stretch.quarto-figure-right  {
+      display: block;
+      margin-left: auto;
+      margin-right: 0; 
+    }
+  </style>
+</head>
+<body class="quarto-light">
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide" data-background-image="fig/Lunds_universitet_original.svg.png" data-background-position="right 50px bottom 25px" data-background-size="20%" class="center">
+  <h1 class="title">Bayesian Inference with Quantile-Parameterized Distributions</h1>
+  <p class="subtitle">Encoding and updating uncertain judgments</p>
+  <p class="author"><strong>Dmytro Perepolkin</strong><br><em>PhD student, CEC</em></p>
+  <p class="institute">Lund University</p>
+  <p class="date">2022-09-19</p>
+</section>
+
+<section id="roadmap" class="slide level2">
+<h2>Roadmap</h2>
+<div class="cell">
+
+</div>
+<p>We will touch on some of the following:</p>
+<ul>
+<li>Fitting the distribution to judgments and data.</li>
+<li>Smooth beliefs. QPD priors.</li>
+<li>Quantile-based inference
+<ul>
+<li>Quantile based prior and likelihood.</li>
+</ul></li>
+<li>Quantile-based quantile-parameterized likelihood.
+<ul>
+<li>Chronic bitter chocolate consumption example.</li>
+</ul></li>
+<li>Parametric quantile regression (interlude).</li>
+<li>Cumulative science and posterior passing</li>
+</ul>
+</section>
+<section id="fitting-a-distribution" class="slide level2">
+<h2>Fitting a distribution</h2>
+<p><img data-src="fig/moebius-loop.png" class="absolute" style="top: 0px; right: 0px; width: 350px; "></p>
+<ul>
+<li>Fitting to data <span class="emoji" data-emoji="thinking">🤔</span>
+<ul>
+<li>Posterior samples.</li>
+<li><em>Data-first</em>: [e]CDF</li>
+</ul></li>
+<li>Fitting to judgments<a href="#/footnotes" class="footnote-ref" id="fnref1" role="doc-noteref" data-footnote-href="#/fn1" onclick=""><sup>1</sup></a>
+<ul>
+<li>Quantile-probability pairs.</li>
+<li><em>Probability-first</em>: QF</li>
+</ul></li>
+<li>Equally plausible ways to define a distribution <span class="citation" data-cites="tukey1965WhichPartSample">(<a href="#/references" role="doc-biblioref" onclick="">Tukey 1965</a>)</span>
+<ul>
+<li>CDF/PDF: <em>density-defined</em> distributions</li>
+<li>QF/QDF: <em>quantile</em> distributions</li>
+</ul></li>
+</ul>
+<p><span class="math display">\[
+f(Q(u))=\frac{dF(Q(u))}{dQ(u)} = \frac{dF(Q(u))/du}{dQ(u)/du}
+= \frac{dF(F^{-1}(u))/du}{q(u)}=[q(u)]^{-1}
+\]</span></p>
+<aside></aside></section>
+<section id="fitting-a-distribution-1" class="slide level2">
+<h2>Fitting a distribution</h2>
+<p><img data-src="fig/square-peg.jpg" class="absolute" style="top: 0px; right: 0px; width: 250px; "></p>
+<p>Judgments: <em>junk</em> or <em>jewels</em>?</p>
+<div>
+<ul>
+<li class="fragment">Inconsistent beliefs <span class="citation" data-cites="olsson2006KnowledgeInquiryEssays sahlin1990PhilosophyFPRamsey">(<a href="#/references" role="doc-biblioref" onclick="">Olsson 2006</a>; <a href="#/references" role="doc-biblioref" onclick="">Sahlin 1990</a>)</span></li>
+<li class="fragment"><em>Sampling</em> from beliefs <span class="citation" data-cites="hartmann2020FlexiblePriorElicitation">(<a href="#/references" role="doc-biblioref" onclick="">Hartmann et al. 2020</a>)</span> vs <em>fitting</em> to beliefs <span class="citation" data-cites="perepolkin2021HybridElicitationIndirect">(<a href="#/references" role="doc-biblioref" onclick="">Perepolkin, Goodrich, and Sahlin 2021a</a>)</span></li>
+</ul>
+<p>Elicit QPPs and fit a “known” distribution</p>
+<ul>
+<li class="fragment">familiar <span class="math inline">\(\approx\)</span> convenient <span class="math inline">\(\neq\)</span> suitable <span class="citation" data-cites="ohagan2006UncertainJudgementsEliciting">(<a href="#/references" role="doc-biblioref" onclick="">O’Hagan et al. 2006</a>)</span></li>
+<li class="fragment"><span class="math inline">\(X\in [0,1]\)</span>? Use Beta!</li>
+<li class="fragment">Or Kumaraswamy? <span class="math inline">\(Q(u|a,b)=(1-(1-u)^{\frac{1}{b}})^{\frac{1}{a}}\)</span></li>
+</ul>
+</div>
+</section>
+<section id="smooth-beliefs" class="slide level2">
+<h2>Smooth beliefs</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p>Drawing a curve through Q-P pairs</p>
+<ul>
+<li>Infinite number of ways</li>
+<li>Need a closed-form CDF (and QF?)</li>
+<li>Problem of the tails &amp; bounds</li>
+</ul>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img data-src="biwqpd-slides_files/figure-revealjs/unnamed-chunk-1-1.png" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:50%;">
+<p>Making your own QPD:</p>
+<table>
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Reparameterization</th>
+<th>Implicit function</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Fix <span class="math inline">\(p\)</span> elicit <span class="math inline">\(q\)</span></td>
+<td>Elicit <span class="math inline">\(p,q\)</span></td>
+</tr>
+<tr class="even">
+<td>Symmetrical Percentiles</td>
+<td>Arbitrary percentiles<a href="#/footnotes" class="footnote-ref" id="fnref2" role="doc-noteref" data-footnote-href="#/fn2" onclick=""><sup>2</sup></a></td>
+</tr>
+<tr class="odd">
+<td>Myerson, J-QPD, <span style="color:teal;">GLD(CSW)</span></td>
+<td><span style="color:teal;">Metalog</span>, SQN</td>
+</tr>
+</tbody>
+</table>
+<p>Let’s look at some examples</p>
+<p><span style="color:teal;font-size:0.5em">* Quantile distributions</span></p>
+</div>
+</div>
+<p><img data-src="fig/one-does-not-simply.png" class="absolute" style="bottom: 0px; right: 0px; width: 450px; "></p>
+<aside></aside></section>
+<section id="closer-look-myerson-distribution" class="slide level2">
+<h2>Closer look: Myerson distribution</h2>
+<p>The quantile function parameterized by three quantile values <span class="math inline">\(q_1,q_2,q_3\)</span> and a tail parameter <span class="math inline">\(\alpha\)</span> <span class="citation" data-cites="myerson2005ProbabilityModelsEconomic">(<a href="#/references" role="doc-biblioref" onclick="">Myerson 2005</a>)</span></p>
+<p><span class="math display">\[
+\rho=q_3-q_2;\;
+\beta=\frac{\rho}{q_2-q_1};\;
+\kappa=\frac{\Phi^{-1}(u)}{\Phi^{-1}(1-\alpha)}\\
+Q_Y(u|q_1,q_2,q_3,\alpha)=\begin{cases}
+q_2+\rho\frac{\beta^{\kappa}-1}{\beta-1}, \quad &amp;\beta \neq 1\\
+q_2+\rho\kappa, \quad &amp;\beta =1
+\end{cases}
+\]</span></p>
+<p>where <span class="math inline">\(u\)</span> is the depth corresponding to the observations of <span class="math inline">\(Y\)</span> given the quantile triplet <span class="math inline">\(\{q_1, q_2, q_3\}\)</span>, corresponding to probabilities <span class="math inline">\(\{\alpha, 0.5, 1-\alpha\}\)</span>. The quantile parameterization is made possible by <span class="math inline">\(\kappa\)</span> which takes values <span class="math inline">\(\{-1,0,1\}\)</span> for the quantiles <span class="math inline">\(\{q_1, q_2, q_3\}\)</span>, so that <span class="math inline">\(Q(\alpha)=q_1\)</span>, <span class="math inline">\(Q(0.5)=q_2\)</span> and <span class="math inline">\(Q(1-\alpha)=q_3\)</span>.</p>
+</section>
+<section id="logit-myerson-distribution" class="slide level2">
+<h2>Logit Myerson distribution</h2>
+<p>We could replace the <span class="math inline">\(\Phi^{-1}\)</span> with <span class="math inline">\(\text{logit(u)}=\ln\left(\frac{u}{1-u}\right)\)</span> (closed form, simpler, higher kurtosis) so that <span class="math inline">\(\kappa=\frac{\text{logit}(u)}{\text{logit}(1-\alpha)}\)</span></p>
+
+<img data-src="biwqpd-slides_files/figure-revealjs/unnamed-chunk-2-1.png" style="width:100.0%" class="r-stretch quarto-figure-center"><p>This can be done with <em>any</em> symmetric standard quantile function, e.g.&nbsp;hyperbolic secant <span class="math inline">\(\ln[\tan(\pi u/2)]\)</span> or even Cauchy <span class="math inline">\(\tan(\pi(u-1/2))\)</span>.</p>
+</section>
+<section id="implicit-function-parameterization" class="slide level2">
+<h2>Implicit function parameterization</h2>
+<p>Simple Q-Normal distribution <span class="citation" data-cites="keelin2011QuantileParameterizedDistributions">(<a href="#/references" role="doc-biblioref" onclick="">Keelin and Powley 2011</a>)</span> expands the <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\sigma\)</span> parameters in the Normal distribution quantile function <span class="math inline">\(Q_Y(u\vert\mu,\sigma)=\mu+\sigma\Phi^{-1}_Y(u)\)</span> to be the function of the depth <span class="math inline">\(u\)</span>, so that <span class="math inline">\(\mu(u)= a_1+a_4u\)</span> and <span class="math inline">\(\sigma(u)=a_2+a_3u\)</span>. Thus the SQN QF is a linear combination</p>
+<p><span class="math display">\[
+Q_Y(u|a_1,a_2,a_3,a_4)=a_1+a_2\Phi^{-1}(u)+a_3u\Phi^{-1}(u)+a_4u
+\]</span></p>
+<p>Because <span class="math inline">\(Q(p)=x\)</span> the parameters <span class="math inline">\(a_1,\dots,a_4\)</span> can be determined using four quantile-probability pairs <span class="math inline">\(\{p_i,x_i\}, \; i=\{1,2,\dots4\}\)</span> plugged into the matrix equation <span class="math inline">\(a=\mathbb{P}^{-1}x\)</span>, where <span class="math inline">\(\mathbb{P}\)</span> is an invertible matrix</p>
+<p><span class="math display">\[
+\mathbb P=\begin{bmatrix}
+           1 &amp; \Phi^{-1}(p_1) &amp; p_1\Phi^{-1}(p_1) &amp; p_1\\
+           1 &amp; \Phi^{-1}(p_2) &amp; p_2\Phi^{-1}(p_2) &amp; p_2\\
+           1 &amp; \Phi^{-1}(p_3) &amp; p_3\Phi^{-1}(p_3) &amp; p_3\\
+           1 &amp; \Phi^{-1}(p_4) &amp; p_4\Phi^{-1}(p_4) &amp; p_4\end{bmatrix}
+\]</span></p>
+<p>Metalog distribution <span class="citation" data-cites="keelin2016MetalogDistributions">(<a href="#/references" role="doc-biblioref" onclick="">Keelin 2016</a>)</span> expands parameters in the <em>logistic QF</em> with a finite Taylor series of <span class="math inline">\(n\)</span> terms in a similar manner<a href="#/footnotes" class="footnote-ref" id="fnref3" role="doc-noteref" data-footnote-href="#/fn3" onclick=""><sup>3</sup></a>.</p>
+<aside></aside></section>
+<section id="closer-look-sqn-and-metalog" class="slide level2">
+<h2>Closer look: SQN and Metalog</h2>
+<p>Quantile function is valid iif it is non-decreasing on the whole <span class="math inline">\([0,1]\)</span> interval <span class="citation" data-cites="gilchrist2000StatisticalModellingQuantile">(<a href="#/references" role="doc-biblioref" onclick="">Gilchrist 2000</a>)</span>.</p>
+
+<img data-src="biwqpd-slides_files/figure-revealjs/unnamed-chunk-3-1.png" style="width:100.0%" class="r-stretch quarto-figure-center"><p>Unfortunately, small change in the parameterizing quantiles can lead to an invalid quantile function. The feasibility conditions for 4-term metalog/SQN are studied in <span class="citation" data-cites="keelin2011QuantileParameterizedDistributions">Keelin and Powley (<a href="#/references" role="doc-biblioref" onclick="">2011</a>)</span> and <span class="citation" data-cites="keelin2017MetalogDistributionsFeasibility">Keelin (<a href="#/references" role="doc-biblioref" onclick="">2017</a>)</span>. General solution is, unfortunately, not available.</p>
+</section>
+<section id="quantile-parameterized-prior-cdf" class="slide level2">
+<h2>Quantile-parameterized prior: CDF</h2>
+<p>Let the hyperparameter <span class="math inline">\(\psi=\{q_1, q_2, q_3, \alpha\}\)</span> for Myerson distribution of parameter <span class="math inline">\(\mu\)</span> in Normal model with a known variance.</p>
+<p><span class="math display">\[
+Y \sim Normal(\mu, \sigma)\\
+\mu \sim Myerson(\psi)\\
+\dots
+\]</span></p>
+<p>In this model, the posterior distribution of <span class="math inline">\(\mu\)</span> given the sample <span class="math inline">\(\underline{y}\)</span> can expressed as</p>
+<p><span class="math display">\[
+f(\mu|\underline{y})\propto \mathcal{L}(\mu,\sigma;\underline{y})f(\mu\vert\psi)
+\]</span></p>
+<p>where <span class="math inline">\(f(\mu\vert\psi)\)</span> is the (prior) PDF of the Myerson distribution. Note that the prior distribution of <span class="math inline">\(\mu\)</span> is defined by three quantiles <span class="math inline">\(\{q_1, q_2, q_3\}\)</span> and a tail parameter <span class="math inline">\(\alpha\)</span>.</p>
+</section>
+<section id="quantile-parameterized-prior-qf" class="slide level2">
+<h2>Quantile-parameterized prior: QF</h2>
+<p>Quantile-parameterized prior can also be defined by the QF</p>
+<p><span class="math display">\[
+Y \sim Normal(Q_\mu(u), \sigma)\\
+u \overset{\mu}{\backsim} Myerson(\psi)\\
+\dots
+\]</span></p>
+<p>In this model, the posterior distribution of the degenerate random variate <span class="math inline">\(u\)</span>, representing the value of the parameter <span class="math inline">\(\mu\)</span> given the sample <span class="math inline">\(\underline{y}\)</span> can expressed as</p>
+<p><span class="math display">\[
+[q_\mu(u|\underline{y})]^{-1} \propto \mathcal{L}(Q_\mu(u\vert\psi),\sigma;\underline{y})[q_\mu(u \vert \psi)]^{-1}
+\lvert q_\mu(u|\psi)\rvert \implies\\
+[q_\mu(u|\underline{y})]^{-1} \propto \mathcal{L}(Q_\mu(u\vert\psi),\sigma;\underline{y})
+\]</span></p>
+<p>where <span class="math inline">\([q(u\vert\psi)]^{-1}\)</span> is the (prior) DQF of Myerson distribution and <span class="math inline">\(\lvert q_\mu(u|\psi)\rvert\)</span> is the Jacobian adjustment.</p>
+<p>Density-defined and quantile-based priors lead to the same posterior beliefs.</p>
+</section>
+<section id="quantile-parameterized-likelihood" class="slide level2">
+<h2>Quantile-parameterized likelihood</h2>
+<p>In order to enable learning, the <span class="math inline">\(\{q,p\}\)</span> pairs (QPPs) need to be allowed to vary. Any new set of drawn “QPP parameters” need to remain a valid QPT (e.g.&nbsp;no overlaps).</p>
+<div class="columns">
+<div class="column" style="width:50%;">
+<ul>
+<li>Dependence between points can be specified using:
+<ul>
+<li>Covariance matrix</li>
+<li>Multivariate distribution</li>
+</ul></li>
+<li>“Monotonicity constraint” <span class="citation" data-cites="burkner2020ModellingMonotonicEffects">(<a href="#/references" role="doc-biblioref" onclick="">Bürkner and Charpentier 2020</a>)</span>
+<ul>
+<li>Look at the probability intervals as categories (adding up to 1)</li>
+<li>We can assign a Dirichlet prior to the uncertainty about the width of the probability bands</li>
+</ul></li>
+</ul>
+</div><div class="column" style="width:50%;">
+<p><img data-src="fig/adults2010cats-1.png"></p>
+</div>
+</div>
+</section>
+<section id="quantile-parameterized-likelihood-1" class="slide level2">
+<h2>Quantile-parameterized likelihood</h2>
+<p>Dirichlet/CM <span class="citation" data-cites="elfadaly2013ElicitingDirichletConnor">(<a href="#/references" role="doc-biblioref" onclick="">Elfadaly and Garthwaite 2013</a>)</span> prior for probability “bands” corresponding to fixed vector of <span class="math inline">\(q*\)</span> ➡ QDirichlet prior</p>
+<p>We can represent probabilities as relative frequencies from a hypothetical sample <span class="citation" data-cites="hoffrage2002RepresentationFacilitatesReasoning">(<a href="#/references" role="doc-biblioref" onclick="">Hoffrage et al. 2002</a>)</span></p>
+<div class="columns">
+<div class="column" style="width:40%;">
+<p><span style="font-size: 0.7em; line-height: 1em"><strong>Interviewer</strong>: Consider a sample of bitter chocolate consumers, say 100 people. According to your assessment there should be only 24 people that consume up to one bit of chocolate a day. We will interpret this assessment as you believing that there’s about equal chance that the actual number of morning coffee consumers (0-4 g/day) in this sample will be above or below 24, i.e we will interpret it as the median assessment. Would you like to reconsider this value?</span></p>
+</div><div class="column" style="width:60%;">
+<p><img data-src="fig/adults2010cats-1.png"></p>
+</div>
+</div>
+</section>
+<section id="hybrid-elicitation" class="slide level2">
+<h2>Hybrid elicitation</h2>
+<p>Conditional* SPT for each band; last band assessed as <span class="math inline">\((1-\sum p)\)</span>. Fit Beta distribution to each triplet. Assemble into parameter vector(s) of Dirichlet (CM) distribution <span class="citation" data-cites="elfadaly2013ElicitingDirichletConnor">(<a href="#/references" role="doc-biblioref" onclick="">Elfadaly and Garthwaite 2013</a>)</span></p>
+<div class="columns">
+<div class="column" style="width:40%;">
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Category</th>
+<th style="text-align: right;">P25</th>
+<th style="text-align: right;">P50</th>
+<th style="text-align: right;">P75</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>Morning coffee (0-4 g/day)</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">30</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>After dinner (4-8 g/day)</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">36</td>
+</tr>
+<tr class="odd">
+<td>4</td>
+<td>Sweet tooth (16+ g/day)</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">20</td>
+</tr>
+</tbody>
+</table>
+<p>Encoded into the Dirichlet vector <span class="math inline">\(\alpha=\{ 13.10, 13.72, 2.12, 4.34\}\)</span> describing uncertainty in the cumulative probabilities corresponding to the quantile values <span class="math inline">\(q^*=\{4,8,16\}\)</span>.</p>
+<p>Result: 2D distribution characterizing the uncertainty in the quantiles of the hypothetical sample</p>
+<p>Note: implied correlation structure</p>
+</div><div class="column" style="width:60%;">
+<div class="r-stack">
+<div class="fragment fade-out">
+<div class="cell">
+<div class="cell-output-display">
+<p><img data-src="biwqpd-slides_files/figure-revealjs/unnamed-chunk-4-1.png" width="480"></p>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img data-src="biwqpd-slides_files/figure-revealjs/unnamed-chunk-5-1.png" width="480"></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="qdirichlet-metalog-model" class="slide level2">
+<h2>QDirichlet-Metalog model</h2>
+<div class="columns">
+<div class="column" style="width:80%;">
+<ol type="1">
+<li>Elicit the vector of quantile values <span class="math inline">\(q^*\)</span></li>
+<li>Elicit uncertainty in associated cumulative probabilities (possible values of <span class="math inline">\(p\)</span>)</li>
+</ol>
+<p><span class="math display">\[
+\begin{aligned}
+&amp;\Delta \sim Dirichlet(\alpha|q^*);\\
+&amp;p \equiv \Xi_1^n(\Delta)\\
+&amp; u \eqsim \widehat {Q^{-1}_X}(x\vert p,q^*)\\
+&amp;u \overset{x}{\backsim} Metalog(p,q^*)
+\end{aligned}
+\]</span></p>
+<p>where <span class="math inline">\(\Xi\)</span> is the cumulative sum operator and <span class="math inline">\(\widehat {Q^{-1}_X}\)</span> is numerically estimated inverse of Metalog quantile function. The density is calculated using the DQF.</p>
+</div><div class="column" style="width:20%;">
+<p><img data-src="fig/brain-meme.jpg" class="absolute" style="right: 0px; width: 350px; "></p>
+</div>
+</div>
+</section>
+<section id="quantile-based-inference" class="slide level2">
+<h2>Quantile-based inference</h2>
+<p>Bayesian updating can be restated in terms of quantile functions and their densities <span class="citation" data-cites="nair2020BayesianInferenceQuantile perepolkin2021TenetsQuantilebasedInference">(<a href="#/references" role="doc-biblioref" onclick="">Nair, Sankaran, and Dileepkumar 2020</a>; <a href="#/references" role="doc-biblioref" onclick="">Perepolkin, Goodrich, and Sahlin 2021b</a>)</span></p>
+<p>Given a random sample of <span class="math inline">\(\underline {y}\)</span> of size <span class="math inline">\(n\)</span> we can compute <span class="math inline">\(\underline {Q}=\{Q(u_1), Q(u_2), \dots Q(u_n)\}\)</span>, such that <span class="math inline">\(u_i=F(y_i\vert\theta)\)</span>, <span class="math inline">\(i=\{1,2,\dots,n\}\)</span>.</p>
+<p><span class="math display">\[
+\begin{align}
+f(\theta\vert\underline{y}) \propto &amp;\mathcal{L}(\theta;\underline{y})f(\theta)\\
+\Downarrow\\
+f(\theta\vert\underline{Q}) \propto &amp;\mathcal{L}(\theta;\underline{Q})f(\theta)\\
+&amp;\mathcal{L}(\theta;\underline{Q})= \prod_{i=1}^nf(Q(u_i|\theta))=\prod_{i=1}^n[q(u_i|\theta)]^{-1}
+\end{align}
+\]</span></p>
+<p>Since the likelihood <span class="math inline">\(\mathcal{L}\)</span> is expressed in terms of the <em>depths</em> <span class="math inline">\(u_i\vert\theta\)</span>, additional step is required to arrive at <span class="math inline">\(\underline{u}=F_Y(\underline{y}\vert\theta)=\widehat{Q_Y^{-1}}(\underline{y}\vert\theta)\)</span> for quantile distributions <span class="citation" data-cites="perepolkin2021TenetsQuantilebasedInference">(<a href="#/references" role="doc-biblioref" onclick="">Perepolkin, Goodrich, and Sahlin 2021b</a>)</span></p>
+</section>
+<section id="implementation" class="slide level2">
+<h2>Implementation</h2>
+<ol type="1">
+<li>Sample a simplex, aggregate, combine with <span class="math inline">\(q^{*}\)</span> and converted into metalog <span class="math inline">\(a\)</span> vector using the matrix equation above.</li>
+<li>Approximate values of depth <span class="math inline">\(u\)</span> by root-finding</li>
+<li>Compute log-likelihood using Metalog DQF</li>
+</ol>
+<div class="cell" data-output.var="none">
+<div class="sourceCode cell-code" id="cb1" data-code-line-numbers="1-7,15|17|18"><pre class="sourceCode numberSource stan number-lines code-with-copy"><code class="sourceCode stan"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">parameters</span> {</span>
+<span id="cb1-2"><a href="#cb1-2"></a>  <span class="dt">simplex</span>[<span class="dv">4</span>] delta; <span class="co">// dirichlet sample - a simplex</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>}</span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">transformed parameters</span>{</span>
+<span id="cb1-5"><a href="#cb1-5"></a>  <span class="co">// go from indexed-delta-quantile parameterization to metalog a-coeffs</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>  <span class="dt">vector</span>[<span class="dv">3</span>] as = logmetalog_reparameterize(delta, idx, qntls, bl);</span>
+<span id="cb1-7"><a href="#cb1-7"></a>}</span>
+<span id="cb1-8"><a href="#cb1-8"></a></span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="kw">model</span> {</span>
+<span id="cb1-10"><a href="#cb1-10"></a>  <span class="dt">vector</span>[N] u;</span>
+<span id="cb1-11"><a href="#cb1-11"></a>  <span class="co">// create grid of xs given the parameter for initial guesses of u</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a>  <span class="dt">vector</span>[M] xs_grd = logmetalog3_v_qf(ys_grd, as, bl);</span>
+<span id="cb1-13"><a href="#cb1-13"></a>  <span class="dt">vector</span>[N] u_guess = vlookup(x_srt, xs_grd, ys_grd);</span>
+<span id="cb1-14"><a href="#cb1-14"></a></span>
+<span id="cb1-15"><a href="#cb1-15"></a>  <span class="kw">target +=</span> dirichlet_lpdf(delta | a);</span>
+<span id="cb1-16"><a href="#cb1-16"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span>:N){</span>
+<span id="cb1-17"><a href="#cb1-17"></a>   u[i] = approx_cdf_algebra(x_srt[i], u_guess[i], as, bl, rel_tol, f_tol, max_steps);</span>
+<span id="cb1-18"><a href="#cb1-18"></a>   <span class="kw">target +=</span> logmetalog_s_ldqf_lpdf(u[i] | as, bl);</span>
+<span id="cb1-19"><a href="#cb1-19"></a>  }</span>
+<span id="cb1-20"><a href="#cb1-20"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="tldr" class="slide level2">
+<h2>TL;DR</h2>
+<p>Asking experts to provide their uncertainty about the elicited QPT is enough to quantify the uncertainty about the food consumption distribution. This approach is particularly useful when the data is sparse.</p>
+<div class="columns">
+<div class="column" style="width:40%;">
+<h3 id="hybrid-elicitation-1">Hybrid elicitation</h3>
+<p>Observations-level parametric elicitation for quantile-parameterized models <span class="citation" data-cites="perepolkin2021HybridElicitationIndirect">(<a href="#/references" role="doc-biblioref" onclick="">Perepolkin, Goodrich, and Sahlin 2021a</a>)</span>.</p>
+<p>QDirichlet (QCM) prior is a 2D distribution, which separates aleatory and epistemic uncertainty.</p>
+<p>QDirichlet-Metalog is a <em>quantile-based</em> quantile-parameterized model</p>
+</div><div class="column" style="width:60%;">
+<div class="r-stack">
+<div class="fragment fade-out">
+<div class="cell">
+<div class="cell-output-display">
+<p><img data-src="biwqpd-slides_files/figure-revealjs/unnamed-chunk-7-1.png" width="480"></p>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img data-src="biwqpd-slides_files/figure-revealjs/unnamed-chunk-8-1.png" width="480"></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="other-uses-of-quantile-based-likelihoods" class="slide level2">
+<h2>Other uses of quantile-based likelihoods</h2>
+<ul>
+<li>Distributions defined by a <em>non-invertible quantile function</em> (GLD, Wakeby, Govindarajulu, g-and-h, g-and-k, FSLD, etc).</li>
+<li>More can be created using Gilchrist’s QF transformation rules <span class="citation" data-cites="gilchrist2000StatisticalModellingQuantile">(<a href="#/references" role="doc-biblioref" onclick="">Gilchrist 2000</a>)</span>.</li>
+</ul>
+<h3 id="parametric-quantile-regression">Parametric quantile regression</h3>
+<p>Linear regression of <span class="math inline">\(Y\)</span> given the covariate <span class="math inline">\(X\)</span> can be expressed as</p>
+<p><span class="math display">\[
+y_i=\underbrace{\alpha+\beta x_i}_{\small{\text{deterministic term }}}+\underbrace{\varepsilon_i}_{\small{\text{stochastic term }}}
+\]</span></p>
+<p>The distribution of the error term <span class="math inline">\(\varepsilon_i\)</span> can be expressed through a standard quantile function <span class="math inline">\(S_\varepsilon(u_i \vert \theta)\)</span></p>
+<p><span class="math display">\[
+y_i=\alpha+\beta x_i+S_\varepsilon(u_i \vert \theta)
+\]</span></p>
+<p>where <span class="math inline">\(S(u\vert\theta)=Q_s(u\vert\theta)-Q_s(0.5\vert\theta)\)</span> is centered <em>basic</em> QF which can be generalized into regular <span class="math inline">\(Q(u|\mu,\sigma,\theta)=\mu+\sigma Q_s(u\vert\theta)\)</span> with location <span class="math inline">\(\mu\)</span> and scale <span class="math inline">\(\sigma\)</span>.</p>
+</section>
+<section id="parametric-quantile-regression-1" class="slide level2">
+<h2>Parametric Quantile Regression</h2>
+<p>The whole regression equation can be expressed as a quantile function</p>
+<p><span class="math display">\[
+Q_Y(u_i\vert\mu_i,\theta)=\mu_i+S_\varepsilon(u_i\vert\theta)
+\]</span></p>
+<p>where <span class="math inline">\(\mu_i=\alpha+\beta x_i\)</span> and scale parameter <span class="math inline">\(\sigma=1\)</span>. If <span class="math inline">\(\sigma \propto x_i\)</span> the model can capture heteroscedasticity of the error term.</p>
+<p>Find depth <span class="math inline">\(u_i\)</span> by inverting the PQR QF <span class="math inline">\(u_i=\widehat{Q_Y^{-1}}(y_i\vert\mu_i,\theta)\)</span>.</p>
+<p>Because the deterministic term <span class="math inline">\(\mu_i\)</span> in PQR QF <span class="math inline">\(Q_Y(u_i\vert\mu_i,\theta)\)</span> is additive and does not depend on the depth <span class="math inline">\(u_i\)</span> it can be dropped from the derivative.</p>
+<p><span class="math display">\[
+\begin{gathered}
+\left[q_Y(u_i \vert \mu_i, \theta)\right]^{-1}=\left[\frac{dQ_Y(u_i \vert \mu_i, \theta)}{du}\right]^{-1}
+= \left[\frac{dS_\varepsilon(u_i\vert\theta)}{du}\right]^{-1}=[q_\varepsilon(u_i\vert\theta)]^{-1}
+\end{gathered}
+\]</span></p>
+<p>where <span class="math inline">\([q_\varepsilon(u_i\vert\theta)]^{-1}\)</span> is the <em>density quantile function</em> of the error term.</p>
+<p><strong>Why bother?</strong> Explicitly modeled error term described by a flexible (possibly quantile) distribution + non-crossing posterior quantiles.</p>
+</section>
+<section id="pqr-example" class="slide level2">
+<h2>PQR example</h2>
+<p>Car stopping distance dataset <span class="citation" data-cites="mosteller2013BeginningStatisticsData">(<a href="#/references" role="doc-biblioref" onclick="">Mosteller, Fienberg, and Rourke 2013</a>)</span> quoted by <span class="citation" data-cites="gilchrist2000StatisticalModellingQuantile">Gilchrist (<a href="#/references" role="doc-biblioref" onclick="">2000</a>)</span>. 30 observations, 2 variables (speed, distance). Predict <code>speed</code> by <code>distance</code>. From physics class, <span class="math inline">\(distance \approx speed^2\)</span>. Priors for the regression parameters are elicited and fitted.</p>
+
+<img data-src="biwqpd-slides_files/figure-revealjs/unnamed-chunk-9-1.png" style="width:100.0%" class="r-stretch quarto-figure-center"></section>
+<section id="crafting-the-distribution-for-the-error-term" class="slide level2">
+<h2>Crafting the distribution for the error term</h2>
+<p>As discussed, <span class="math inline">\(speed \propto \sqrt{distance}\)</span>. Likely heteroscedastic due to intertia.</p>
+<ul>
+<li>Expect the error to be flatter than normal, possibly skewed.</li>
+<li>Start with a well-known basic logistic QF <span class="math inline">\(Q_s(u)=\ln(u)-\ln(1-u)\)</span>.</li>
+<li>Introduce skeweness parameter <span class="math inline">\(\delta\)</span> to weigh the exponential tails (Skew-Logistic QF) <span class="citation" data-cites="gilchrist2000StatisticalModellingQuantile">(<a href="#/references" role="doc-biblioref" onclick="">Gilchrist 2000</a>)</span> <span class="math inline">\(Q_s(u)=(1-\delta)\ln(u)-\delta\ln(1-u)\)</span>.</li>
+<li>We can also mix in the uniform distribution to allow for thicker tails (Flattened Skew-Logistic QF)</li>
+</ul>
+<p><span class="math display">\[
+Q_s(u\vert\eta, \delta,\kappa)=\eta\left[(1-\delta)\ln(u)-\delta\ln(1-u)+\kappa u\right]
+\]</span></p>
+<p>where <span class="math inline">\(\eta,\kappa&gt;0\)</span> and <span class="math inline">\(0\leq\delta\leq1\)</span>.</p>
+<p>If we make the shape parameter <span class="math inline">\(\eta\)</span> to be dependent on the covariate <span class="math inline">\(x_i\)</span>, the error term model can capture heteroscedasticity.</p>
+</section>
+<section id="parametric-quantile-regression-model" class="slide level2">
+<h2>Parametric Quantile Regression model</h2>
+<p><span class="math display">\[
+f(\alpha, \beta, \theta  \vert \underline{Q_Y},\underline{x}) \propto \mathcal{L}(\theta;\underline{Q_Y},\alpha, \beta, \theta, \underline{x})f(\theta) \\
+\mathcal{L}(\theta;\underline{Q_Y}, \alpha, \beta, \theta, \underline{x}) = \prod_{i=1}^n f(Q_Y(u_i \vert \alpha,\beta, \theta;x_i))
+= \prod_{i=1}^n\left[{q_\varepsilon(u_i} \vert \theta)x_i\right]^{-1}\\
+\]</span></p>
+<p>The model becomes</p>
+<p><span class="math display">\[
+\begin{gathered}
+Q_Y(\underline{u} \vert \alpha,\beta, \theta; \underline{x}) = \alpha+\beta\sqrt{\underline{x}}
++S_\varepsilon(\underline{u};\theta)\sqrt{\underline x}\\
+u \overset{y}{\backsim} Q_Y(\alpha,\beta, \theta; \underline{x})\\
+\alpha \sim \text{LogitMyerson}(0,5,11; 0.1)\\
+\beta \sim \text{LogitMyerson}(2,5,12; 0.1)\\
+\eta \sim \text{Exp}(1/2)\\
+\delta \sim \text{Beta}(2,1)\\
+\kappa \sim \text{Exp}(1/0.1)
+\end{gathered}
+\]</span></p>
+<p>where <span class="math inline">\(y\)</span> is speed and <span class="math inline">\(x\)</span> is <em>square root of distance</em>, <span class="math inline">\(\theta=\{\eta,\delta,\kappa\}\)</span>, <span class="math inline">\(\beta,\eta,\kappa&gt;0\)</span> and <span class="math inline">\(0\leq\delta\leq1\)</span>.</p>
+</section>
+<section id="results" class="slide level2">
+<h2>Results</h2>
+<div class="cell">
+<div class="cell-output-display">
+<table>
+<colgroup>
+<col style="width: 12%">
+<col style="width: 8%">
+<col style="width: 10%">
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 12%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">variable</th>
+<th style="text-align: right;">mean</th>
+<th style="text-align: right;">median</th>
+<th style="text-align: right;">sd</th>
+<th style="text-align: right;">mad</th>
+<th style="text-align: right;">q5</th>
+<th style="text-align: right;">q95</th>
+<th style="text-align: right;">rhat</th>
+<th style="text-align: right;">ess_bulk</th>
+<th style="text-align: right;">ess_tail</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">alph</td>
+<td style="text-align: right;">3.815</td>
+<td style="text-align: right;">3.830</td>
+<td style="text-align: right;">0.188</td>
+<td style="text-align: right;">0.178</td>
+<td style="text-align: right;">3.488</td>
+<td style="text-align: right;">4.090</td>
+<td style="text-align: right;">1.041</td>
+<td style="text-align: right;">145.439</td>
+<td style="text-align: right;">175.328</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">bt</td>
+<td style="text-align: right;">4.510</td>
+<td style="text-align: right;">4.507</td>
+<td style="text-align: right;">0.055</td>
+<td style="text-align: right;">0.052</td>
+<td style="text-align: right;">4.423</td>
+<td style="text-align: right;">4.605</td>
+<td style="text-align: right;">1.017</td>
+<td style="text-align: right;">267.858</td>
+<td style="text-align: right;">523.984</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">eta</td>
+<td style="text-align: right;">0.268</td>
+<td style="text-align: right;">0.262</td>
+<td style="text-align: right;">0.053</td>
+<td style="text-align: right;">0.049</td>
+<td style="text-align: right;">0.192</td>
+<td style="text-align: right;">0.363</td>
+<td style="text-align: right;">1.014</td>
+<td style="text-align: right;">356.306</td>
+<td style="text-align: right;">652.904</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">k</td>
+<td style="text-align: right;">0.102</td>
+<td style="text-align: right;">0.071</td>
+<td style="text-align: right;">0.095</td>
+<td style="text-align: right;">0.076</td>
+<td style="text-align: right;">0.006</td>
+<td style="text-align: right;">0.294</td>
+<td style="text-align: right;">1.013</td>
+<td style="text-align: right;">279.601</td>
+<td style="text-align: right;">285.959</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">dlt</td>
+<td style="text-align: right;">0.816</td>
+<td style="text-align: right;">0.829</td>
+<td style="text-align: right;">0.097</td>
+<td style="text-align: right;">0.090</td>
+<td style="text-align: right;">0.639</td>
+<td style="text-align: right;">0.946</td>
+<td style="text-align: right;">1.025</td>
+<td style="text-align: right;">262.690</td>
+<td style="text-align: right;">201.072</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<img data-src="biwqpd-slides_files/figure-revealjs/unnamed-chunk-11-1.png" width="960" class="r-stretch quarto-figure-center"></section>
+<section id="results-1" class="slide level2">
+<h2>Results</h2>
+
+<img data-src="biwqpd-slides_files/figure-revealjs/unnamed-chunk-12-1.png" width="960" class="r-stretch"></section>
+<section id="posterior-predictive" class="slide level2">
+<h2>Posterior predictive</h2>
+
+<img data-src="biwqpd-slides_files/figure-revealjs/unnamed-chunk-13-1.png" width="960" class="r-stretch"></section>
+<section id="references" class="slide level2 smaller scrollable">
+<h2>References</h2>
+
+<img src="fig/qpd_hex.png" class="slide-logo r-stretch"><div class="footer footer-default">
+<p><a href="https://bit.ly/biwqpd-slides" class="uri">https://bit.ly/biwqpd-slides</a></p>
+</div>
+<div id="refs" class="references csl-bib-body hanging-indent" role="doc-bibliography">
+<div id="ref-burkner2020ModellingMonotonicEffects" class="csl-entry" role="doc-biblioentry">
+Bürkner, Paul-Christian, and Emmanuel Charpentier. 2020. <span>“Modelling Monotonic Effects of Ordinal Predictors in Bayesian Regression Models.”</span> <em>British Journal of Mathematical and Statistical Psychology</em> 73 (3): 420–51. <a href="https://doi.org/ggqtkh">https://doi.org/ggqtkh</a>.
+</div>
+<div id="ref-elfadaly2013ElicitingDirichletConnor" class="csl-entry" role="doc-biblioentry">
+Elfadaly, Fadlalla G., and Paul H. Garthwaite. 2013. <span>“Eliciting Dirichlet and Connormosimann Prior Distributions for Multinomial Models.”</span> <em>TEST</em> 22 (4): 628–46. <a href="https://doi.org/10.1007/s11749-013-0336-4">https://doi.org/10.1007/s11749-013-0336-4</a>.
+</div>
+<div id="ref-gilchrist2000StatisticalModellingQuantile" class="csl-entry" role="doc-biblioentry">
+Gilchrist, Warren. 2000. <em>Statistical Modelling with Quantile Functions</em>. Boca Raton: Chapman &amp; Hall/CRC.
+</div>
+<div id="ref-hartmann2020FlexiblePriorElicitation" class="csl-entry" role="doc-biblioentry">
+Hartmann, Marcelo, Georgi Agiashvili, Paul Bürkner, and Arto Klami. 2020. <span>“Flexible Prior Elicitation via the Prior Predictive Distribution.”</span> <em>arXiv:2002.09868 [Stat]</em>, February. <a href="https://arxiv.org/abs/2002.09868">https://arxiv.org/abs/2002.09868</a>.
+</div>
+<div id="ref-hoffrage2002RepresentationFacilitatesReasoning" class="csl-entry" role="doc-biblioentry">
+Hoffrage, Ulrich, Gerd Gigerenzer, Stefan Krauss, and Laura Martignon. 2002. <span>“Representation Facilitates Reasoning: What Natural Frequencies Are and What They Are Not.”</span> <em>Cognition</em> 84 (3): 343–52. <a href="https://doi.org/fqcg8h">https://doi.org/fqcg8h</a>.
+</div>
+<div id="ref-keelin2016MetalogDistributions" class="csl-entry" role="doc-biblioentry">
+Keelin, Thomas W. 2016. <span>“The Metalog Distributions.”</span> <em>Decision Analysis</em> 13 (4): 243–77. <a href="https://doi.org/f9n7nt">https://doi.org/f9n7nt</a>.
+</div>
+<div id="ref-keelin2017MetalogDistributionsFeasibility" class="csl-entry" role="doc-biblioentry">
+———. 2017. <span>“The Metalog Distributions - Feasibility.”</span> <em>The Metalog Distributions</em>. http://www.metalogdistributions.com/equations/feasibility.html.
+</div>
+<div id="ref-keelin2011QuantileParameterizedDistributions" class="csl-entry" role="doc-biblioentry">
+Keelin, Thomas W., and Bradford W. Powley. 2011. <span>“Quantile-Parameterized Distributions.”</span> <em>Decision Analysis</em> 8 (3): 206–19. <a href="https://doi.org/10.1287/deca.1110.0213">https://doi.org/10.1287/deca.1110.0213</a>.
+</div>
+<div id="ref-mosteller2013BeginningStatisticsData" class="csl-entry" role="doc-biblioentry">
+Mosteller, Frederick, Stephen E. Fienberg, and Robert E. K. Rourke. 2013. <em>Beginning Statistics with Data Analysis</em>. Mineola, New York: Dover Publications, Inc.
+</div>
+<div id="ref-myerson2005ProbabilityModelsEconomic" class="csl-entry" role="doc-biblioentry">
+Myerson, Roger B. 2005. <em>Probability Models for Economic Decisions</em>. Duxbury Applied Series. Belmont, CA: Thomson/Brooke/Cole.
+</div>
+<div id="ref-nair2020BayesianInferenceQuantile" class="csl-entry" role="doc-biblioentry">
+Nair, N. Unnikrishnan, P. G. Sankaran, and M. Dileepkumar. 2020. <span>“Bayesian Inference in Quantile Functions.”</span> <em>Communications in Statistics - Theory and Methods</em> 0 (0): 1–13. <a href="https://doi.org/ghkdr4">https://doi.org/ghkdr4</a>.
+</div>
+<div id="ref-ohagan2006UncertainJudgementsEliciting" class="csl-entry" role="doc-biblioentry">
+O’Hagan, Anthony, Caitlin E. Buck, Alireza Daneshkhah, J. Richard Eiser, Paul H. Garthwaite, David J. Jenkinson, Jeremy E. Oakley, and Tim Rakow. 2006. <em>Uncertain Judgements: Eliciting Experts’ Probabilities: O’hagan/Uncertain Judgements: Eliciting Experts’ Probabilities</em>. Chichester, UK: John Wiley &amp; Sons, Ltd. <a href="https://doi.org/10.1002/0470033312">https://doi.org/10.1002/0470033312</a>.
+</div>
+<div id="ref-olsson2006KnowledgeInquiryEssays" class="csl-entry" role="doc-biblioentry">
+Olsson, Erik J. 2006. <em>Knowledge and Inquiry: Essays on the Pragmatism of Isaac Levi</em>. Cambridge University Press.
+</div>
+<div id="ref-perepolkin2021HybridElicitationIndirect" class="csl-entry" role="doc-biblioentry">
+Perepolkin, Dmytro, Benjamin Goodrich, and Ullrika Sahlin. 2021a. <span>“Hybrid Elicitation and Indirect Bayesian Inference with Quantile-Parametrized Likelihood.”</span> OSF Preprints. <a href="https://doi.org/10.31219/osf.io/paby6">https://doi.org/10.31219/osf.io/paby6</a>.
+</div>
+<div id="ref-perepolkin2021TenetsQuantilebasedInference" class="csl-entry" role="doc-biblioentry">
+———. 2021b. <span>“The Tenets of Quantile-Based Inference in Bayesian Models.”</span> Preprint. https://osf.io/enzgs: Open Science Framework. <a href="https://doi.org/10.31219/osf.io/enzgs">https://doi.org/10.31219/osf.io/enzgs</a>.
+</div>
+<div id="ref-sahlin1990PhilosophyFPRamsey" class="csl-entry" role="doc-biblioentry">
+Sahlin, Nils-Eric. 1990. <em>The Philosophy of FP Ramsey</em>. Cambridge University Press.
+</div>
+<div id="ref-tukey1965WhichPartSample" class="csl-entry" role="doc-biblioentry">
+Tukey, John W. 1965. <span>“Which Part of the Sample Contains the Information?”</span> <em>Proceedings of the National Academy of Sciences</em> 53 (1): 127–34. <a href="https://doi.org/dkvgcq">https://doi.org/dkvgcq</a>.
+</div>
+</div>
+</section>
+<section id="footnotes" class="footnotes footnotes-end-of-document smaller scrollable" role="doc-endnotes"><h2>Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>For Bayesians, probabilities represent the state of knowledge</p></li>
+<li id="fn2"><p>Potentially</p></li>
+<li id="fn3"><p>Includes semi-bounded (LogMetalog) and bounded (LogitMetalog)</p></li>
+</ol>
+</section>
+    </div>
+  </div>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script>
+  <script src="biwqpd-slides_files/libs/revealjs/dist/reveal.js"></script>
+  <!-- reveal.js plugins -->
+  <script src="biwqpd-slides_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="biwqpd-slides_files/libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="biwqpd-slides_files/libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="biwqpd-slides_files/libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="biwqpd-slides_files/libs/revealjs/plugin/quarto-support/support.js"></script>
+  
+
+  <script src="biwqpd-slides_files/libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="biwqpd-slides_files/libs/revealjs/plugin/search/search.js"></script>
+  <script src="biwqpd-slides_files/libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script src="biwqpd-slides_files/libs/revealjs/plugin/math/math.js"></script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+'controlsAuto': true,
+'previewLinksAuto': true,
+'smaller': true,
+'pdfSeparateFragments': false,
+'autoAnimateEasing': "ease",
+'autoAnimateDuration': 1,
+'autoAnimateUnmatched': true,
+'menu': {"side":"left","useTextContentForMissingTitles":true,"markers":false,"loadIcons":false,"custom":[{"title":"Tools","icon":"<i class=\"fas fa-gear\"></i>","content":"<ul class=\"slide-menu-items\">\n<li class=\"slide-tool-item active\" data-item=\"0\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.fullscreen(event)\"><kbd>f</kbd> Fullscreen</a></li>\n<li class=\"slide-tool-item\" data-item=\"1\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.speakerMode(event)\"><kbd>s</kbd> Speaker View</a></li>\n<li class=\"slide-tool-item\" data-item=\"2\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.overview(event)\"><kbd>o</kbd> Slide Overview</a></li>\n<li class=\"slide-tool-item\" data-item=\"3\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.overview(event)\"><kbd>e</kbd> PDF Export Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"4\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.keyboardHelp(event)\"><kbd>?</kbd> Keyboard Help</a></li>\n</ul>"}],"openButton":true},
+'smaller': true,
+ 
+        // Display controls in the bottom right corner
+        controls: false,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: false,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'edges',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: 'c/t',
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: false,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'linear',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: false,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'none',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'none',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // The "normal" size of the presentation, aspect ratio will be preserved
+        // when the presentation is scaled to fit different resolutions. Can be
+        // specified using percentage units.
+        width: 1050,
+
+        height: 700,
+
+        // Factor of the display size that should remain empty around the content
+        margin: 0.1,
+
+        math: {
+          mathjax: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js',
+          config: 'TeX-AMS_HTML-full',
+          tex2jax: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            balanceBraces: true,
+            processEscapes: false,
+            processRefs: true,
+            processEnvironments: true,
+            preview: 'TeX',
+            skipTags: ['script','noscript','style','textarea','pre','code'],
+            ignoreClass: 'tex2jax_ignore',
+            processClass: 'tex2jax_process'
+          },
+        },
+
+        // reveal.js plugins
+        plugins: [QuartoLineHighlight, PdfExport, RevealMenu, QuartoSupport,
+
+          RevealMath,
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    
+    <script>
+      // htmlwidgets need to know to resize themselves when slides are shown/hidden.
+      // Fire the "slideenter" event (handled by htmlwidgets.js) when the current
+      // slide changes (different for each slide format).
+      (function () {
+        function fireSlideChanged(previousSlide, currentSlide) {
+
+          // dispatch for htmlwidgets
+          const event = window.document.createEvent("Event");
+          event.initEvent("slideenter", true, true);
+          window.document.dispatchEvent(event);
+
+          // dispatch for shiny
+          if (window.jQuery) {
+            if (previousSlide) {
+              window.jQuery(previousSlide).trigger("hidden");
+            }
+            if (currentSlide) {
+              window.jQuery(currentSlide).trigger("shown");
+            }
+          }
+        }
+
+        // hookup for reveal
+        if (window.Reveal) {
+          window.Reveal.addEventListener("slidechanged", function(event) {
+            fireSlideChanged(event.previousSlide, event.currentSlide);
+          });
+        }
+
+        // hookup for slidy
+        if (window.w3c_slidy) {
+          window.w3c_slidy.add_observer(function (slide_num) {
+            // slide_num starts at position 1
+            fireSlideChanged(null, w3c_slidy.slides[slide_num - 1]);
+          });
+        }
+
+      })();
+    </script>
+
+    <script id="quarto-html-after-body" type="application/javascript">
+    window.document.addEventListener("DOMContentLoaded", function (event) {
+      const toggleBodyColorMode = (bsSheetEl) => {
+        const mode = bsSheetEl.getAttribute("data-mode");
+        const bodyEl = window.document.querySelector("body");
+        if (mode === "dark") {
+          bodyEl.classList.add("quarto-dark");
+          bodyEl.classList.remove("quarto-light");
+        } else {
+          bodyEl.classList.add("quarto-light");
+          bodyEl.classList.remove("quarto-dark");
+        }
+      }
+      const toggleBodyColorPrimary = () => {
+        const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+        if (bsSheetEl) {
+          toggleBodyColorMode(bsSheetEl);
+        }
+      }
+      toggleBodyColorPrimary();  
+      const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+      tabsets.forEach(function(tabset) {
+        const tabby = new Tabby('#' + tabset.id);
+      });
+      const clipboard = new window.ClipboardJS('.code-copy-button', {
+        target: function(trigger) {
+          return trigger.previousElementSibling;
+        }
+      });
+      clipboard.on('success', function(e) {
+        // button target
+        const button = e.trigger;
+        // don't keep focus
+        button.blur();
+        // flash "checked"
+        button.classList.add('code-copy-button-checked');
+        var currentTitle = button.getAttribute("title");
+        button.setAttribute("title", "Copied!");
+        setTimeout(function() {
+          button.setAttribute("title", currentTitle);
+          button.classList.remove('code-copy-button-checked');
+        }, 1000);
+        // clear code selection
+        e.clearSelection();
+      });
+      function tippyHover(el, contentFn) {
+        const config = {
+          allowHTML: true,
+          content: contentFn,
+          maxWidth: 500,
+          delay: 100,
+          arrow: false,
+          appendTo: function(el) {
+              return el.closest('section.slide') || el.parentElement;
+          },
+          interactive: true,
+          interactiveBorder: 10,
+          theme: 'quarto-reveal',
+          placement: 'bottom-start'
+        };
+          config['offset'] = [0,0];
+          config['maxWidth'] = 700;
+        window.tippy(el, config); 
+      }
+      const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+      for (var i=0; i<noterefs.length; i++) {
+        const ref = noterefs[i];
+        tippyHover(ref, function() {
+          // use id or data attribute instead here
+          let href = ref.getAttribute('data-footnote-href');
+          try { href = new URL(href).hash; } catch {}
+          const id = href.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          return note.innerHTML;
+        });
+      }
+      var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+      for (var i=0; i<bibliorefs.length; i++) {
+        const ref = bibliorefs[i];
+        const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+        tippyHover(ref, function() {
+          var popup = window.document.createElement('div');
+          cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    });
+    </script>
+    
+
+</body></html>

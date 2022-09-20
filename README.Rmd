@@ -1,0 +1,295 @@
+---
+title: "Target Markdown"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+Target Markdown is a powerful R Markdown interface for reproducible analysis pipelines, and the chapter at https://books.ropensci.org/targets/markdown.html walks through it in detail. This R Markdown report the example from the chapter. Try it out in both interactive and non-interactive modes, either by running the code chunks in different ways or setting the `tar_interactive` chunk option.
+
+# Packages
+
+The example requires several R packages, and `targets` must be version 0.5.0.9000 or above. 
+
+```{r, eval = FALSE}
+remotes::install_github("dmi3kno/qpd")
+install.packages(c("targets", "tarchetypes","extraDistr", "tidyverse", "posterior", "rstan", "fmcmc", "details"))
+```
+
+# Setup
+
+If you are using old versions of `targets` (<= 0.7.0) and/or `knitr` (<= 1.33), you will need to load the `targets` package in the R Markdown document in order for Target Markdown code chunks to work.
+
+```{r}
+library(targets)
+library(magrittr)
+tar_unscript()
+```
+
+# Globals
+
+We first define some global options/functions common to all targets. The function below plots a histogram of ozone concentrations, and our histogram target will need it.
+
+```{targets heiiwqplposter-globals, tar_globals = TRUE}
+options(tidyverse.quiet = TRUE)
+tar_option_set(packages = c("qpd", "extraDistr", "tidyverse", "posterior", "cmdstanr", "fmcmc"))
+options(mc.cores = parallel::detectCores()-2)
+options(clustermq.scheduler="multicode")
+```
+
+# Targets
+
+Prepare EFSA data
+
+```{targets chocolate_nested, tar_simple=TRUE, message=FALSE}
+chocolate_raw <- readxl::read_excel("data/Foodex 2 L5 dashboard.xlsx", skip = 2) 
+chocolate <- chocolate_raw %>% 
+  filter(`Survey start year`>2000) %>% 
+  mutate(Survey=paste0("(", `Population Group`,", ",`Survey start year`,")")) %>% 
+  select(21,10,14:19) %>% 
+  rename("50th percentile"="Median",
+         "Ncons"="Number of consumers")
+
+chocolate %>% 
+  pivot_longer(-c(Survey,Ncons), names_to = "p", values_to = "q") %>% 
+  mutate(p=parse_number(p)/100) %>% 
+  group_by(Survey,Ncons,q) %>% 
+  summarize(p=mean(p)) %>% 
+  group_by(Survey, Ncons) %>% 
+  summarise(p=list(p), q=list(q)) %>% 
+  mutate(mtlg_a=map2(p, q, ~qpd::approx_max_metalog(q=.y, p_grid =.x, bl=0))) %>% 
+  mutate(mtlg_v=map_lgl(mtlg_a, qpd::is_metalog_valid, bl=0))
+```
+
+Sample from latest adult survey metalog
+
+```{targets choc_obs_df, tar_simple=TRUE}
+set.seed(42)
+chocolate_nested %>% 
+  filter(Survey=="(Adolescents, 2016)") %>% 
+  #mutate(Ncons=100) %>% #Ncons*10
+  mutate(obs=map2(Ncons, mtlg_a, qpd::rmetalog, bl=0))
+```
+
+Create a data frame of elicited data
+
+```{targets elicited_data, tar_simple=TRUE}
+tibble::tribble(~cat_idx, ~cat, ~CDFprob, ~count,
+                  1L, "Morning coffee (0-4 g/day)", 0.25, 20,#18
+                  1L, "Morning coffee (0-4 g/day)", 0.5, 24,#24
+                  1L, "Morning coffee (0-4 g/day)", 0.75, 28,#30
+                  2L, "After dinner (4-8 g/day)", 0.25, 49-24, #49
+                  2L, "After dinner (4-8 g/day)", 0.50, 55-24, #55
+                  2L, "After dinner (4-8 g/day)", 0.75, 60-24, #60
+                  4L, "Sweet tooth (16+ g/day)", 0.25, 100-95,#92
+                  4L, "Sweet tooth (16+ g/day)", 0.50, 100-85,#85
+                  4L, "Sweet tooth (16+ g/day)", 0.75, 100-80,#80
+  )
+```
+
+Fit a Dirichlet distribution to elicited data
+
+```{targets dir_df, tar_simple=TRUE}
+elicited_data %>% 
+  mutate(prb=count/100) %>% 
+  qpd::fit_dir(id_col = "cat_idx", spt_col = "CDFprob", prb_col="prb")
+```
+
+Prepare the data for QDirichlet-Metalog Stan model
+
+```{targets choc_data, tar_simple=TRUE}
+q_star <- c(4,8,16)
+prior_idx <- dir_df$cat_idx
+prior_dir_a <- dir_df$a
+choc_obs <- choc_obs_df %>% 
+    unnest(cols="obs") %>% pull()
+# create probability grid to be used for interpolation
+ys_grd <- qpd::make_pgrid(1000,2)
+
+list(N=length(choc_obs), x=choc_obs, M=length(ys_grd), ys_grd=ys_grd,
+     a=prior_dir_a, idx=prior_idx,
+     qntls=q_star, bl=0.0,  rel_tol=1e-15, f_tol=1e-10, max_steps=1e2)
+```
+
+Define initialization function for the QDir-Metalog model
+
+```{targets f_initf_dirmetalog, tar_globals=TRUE}
+initf_dirmetalog <- function() {
+  deltas3 <- c(0.25, 0.25, 0.15)+runif(3, -0.02, 0.02)
+  list(delta = c(deltas3, 1-sum(deltas3)))
+}
+```
+
+Compile and fit the model
+
+```{targets model, tar_interactive=FALSE}
+# note the name of the target will be fit_dirmetalog_draws_mtqd_mod
+stantargets::tar_stan_mcmc(name="fit_dirmetalog",
+                       "stan/mtqd_mod.stan",
+                       data=choc_data, init=initf_dirmetalog, 
+         adapt_delta=0.8, seed=42, iter_sampling =5000, chains = 4)
+```
+
+```{targets draws_as_df, tar_simple=TRUE}
+m_as <- fit_dirmetalog_draws_mtqd_mod %>% 
+  posterior::as_draws_array() %>% 
+  posterior::subset_draws(variable="as", regex=TRUE)  %>% 
+  posterior::as_draws_matrix() %>% unclass()
+
+map_df(seq_len(nrow(m_as)), 
+       ~tibble::tibble(.draw=.x, as=list(m_as[.x,])))
+```
+
+# PQR
+
+```{targets carstop_data, tar_simple=TRUE}
+df_cs <- tibble::tibble(
+  s=c(10, 10, 15, 15, 20, 20, 25, 25, 30, 30, 35, 35, 40, 40, 45, 45,
+      50, 50, 55, 55, 60, 60, 65, 65, 70, 70, 75, 75, 80, 80),
+  d= c(2, 2, 5, 6, 13, 11, 23, 21, 29, 36, 49, 50, 68, 71, 84, 81, 
+       107, 99, 127, 132, 168, 122, 211, 195, 232, 176, 244, 263, 269, 236))
+df_cs
+
+```
+
+```{targets fld_pqr_globs, tar_globals=TRUE}
+qrqf <- function(u, alph, bt, eta, k, dlt, x){
+  S <- qpd::qfsld(u,eta,k,dlt)-qpd::qfsld(0.5, eta,k,dlt)
+  alph+bt*sqrt(x)+sqrt(x)*S
+}
+
+irqf <- qpd::iqf(qrqf)
+
+ll_rqf <- function(param, s, d){
+  alph <- param[1]
+  bt <- param[2]
+  eta <- param[3]
+  k <- param[4]
+  dlt <- param[5]
+
+  #if(v<0||v>1) return(-Inf)
+  #if(w<0||w>1) return(-Inf)  
+  if(eta<0) return(-Inf)
+  if(k<0) return(-Inf)
+  if(dlt<0||dlt>1) return(-Inf)
+
+  # indirect priors
+  #alph <- qpd::qfld(v, bt=1, k=10, a=1)
+ # bt <- qpd::qfsld(w, bt=2, k=2, dlt=0.8, a=2)
+  
+  u <- irqf(s, alph, bt, eta, k, dlt, d, silent = FALSE)
+# the scale adjustments need to be added to log-likelihood
+  log_likelihood <- -log(sqrt(d))+qpd::dqfsld(u, eta, k, dlt, log=TRUE)
+  #log_prior_alph <- dexp(alph, 1/5, log=TRUE) # quantile prior = 1/jacobian 
+  log_prior_alph <- dlogitMyerson(bt, 0, 5, 11, alpha=0.1)
+  #log_prior_bt <- dexp(bt, 1/5, log=TRUE) # quantile prior = 1/jacobian 
+  log_prior_bt <- dlogitMyerson(bt, 2, 5, 12, alpha=0.1)
+  log_prior_eta <- dexp(eta, 1/2, log=TRUE)
+  log_prior_k <- dexp(k, 1/0.1, log=TRUE)
+  log_prior_dlt <- dbeta(dlt, 2,1, log=TRUE)
+  
+  ll <- sum(log_likelihood)+log_prior_alph+
+    log_prior_bt+
+    log_prior_eta+log_prior_k+log_prior_dlt
+  if(!is.finite(ll)) return(-Inf)
+  ll
+}
+set.seed(42)
+initials_rqf <- matrix(rep(c(0.5, 0.5, 2, 0.1, 0.75), each=4)+rnorm(4*5, 0, 0.01), nrow=4, byrow=FALSE, 
+                       dimnames = list(NULL, c("alph", "bt", "eta", "k", "dlt")))
+```
+
+```{targets fld_pqr_fit, tar_simple=TRUE}
+.ub <- .Machine$double.xmax
+.lb <- -.Machine$double.xmax
+fit_rqf <- fmcmc::MCMC(ll_rqf,
+                       initial = initials_rqf,
+                       s=carstop_data$s, d=carstop_data$d,
+                       nsteps = 5000,
+                       burnin = 2500,
+                       nchains = 4L,
+                       kernel = kernel_ram(eps=1e-3,
+                                           lb=c(.lb,.lb,0,0,0),
+                                           ub=c(.ub,.ub,.ub,.ub,1)),
+                       multicore = FALSE,
+                       progress = TRUE)
+fit_rqf
+```
+
+```{targets fld_pqr_draws, tar_simple=TRUE}
+fld_pqr_fit %>% 
+  posterior::as_draws_array() %>% 
+  #posterior::mutate_variables(
+    #"Q(v)"= qpd::qfld(v, bt=1, k=10, a=1),
+    #"Q(w)"= qpd::qfsld(w, bt=2, k=2, dlt=0.8, a=2)
+  #) %>% 
+  posterior::subset_draws(variable=c("alph", "bt", "eta", "k", "dlt"))
+```
+
+Posterior draws for 5-50-95 quantile
+
+```{targets fld_ppc_draws, tar_simple=TRUE}
+d_grd <- seq(1,280, by=10)
+p_grd <- c(0.05, 0.5, 0.95)
+N <- 500
+#fld_pqr_draws <- posterior::as_draws_array(fld_pqr_fit) 
+
+fld_pqr_draws %>% 
+  posterior::subset_draws(draw=sample(posterior::ndraws(fld_pqr_draws), N)) %>%
+  #posterior::rename_variables(
+  #  alph = "Q(v)"#,
+  #  #bt = "Q(w)"
+  #) %>% 
+  posterior::as_draws_df() %>%
+  as_tibble() %>% 
+  crossing(p_grd) %>% 
+  mutate(ds=list(d_grd),
+         ys=pmap(list(p_grd, alph, bt, eta, k, dlt, ds), qrqf),
+         tbl=pmap(list(draw=.draw, ps=p_grd, ds=ds, ys=ys), dplyr::bind_cols)) %>% 
+  select(tbl) %>% 
+  unnest(tbl) 
+
+```
+
+
+## Execute all targets
+
+The following code will remove the old logs, re-build the outdated targets and re-render the final paper. As a result a new directory _targets will be created on your computer and the hashed version of the results (in compressed format) will be stored there.
+
+If you inspect the scripts in the `_targets_r/` you will see a list of statements like `tar_target(name=claims_data, {...})`. These targets will be ran each individually, as the sub-tasks.
+
+```{r}
+unlink("logs", recursive = TRUE)
+targets::tar_make()
+```
+
+The targets dependency graph helps your readers understand the steps of the pipeline at a high level. You can review the graph of task dependencies, including the status of individual nodes, with
+
+```{r, eval=FALSE}
+targets::tar_visnetwork()
+```
+
+The nodes get invalidated if any modification is made of the node or any of its parents (ancestors). The out-of-date nodes will be rerun next time you run tar_make().
+
+At this point, you can go back and run {targets} chunks in interactive mode without interfering with the code or data of the non-interactive pipeline.
+
+```{r}
+tar_progress_summary()
+```
+
+The results can be retrieved by the name of the subtask. For example, this will retrieve the latest fit object for the QDirichlet-Metalog model from the article.
+
+```{r}
+tar_read(fld_pqr_fit)
+```
+
+
+# Session Info
+
+```{r}
+sessioninfo::session_info()%>%
+  details::details(summary = 'Session Info')
+```
+

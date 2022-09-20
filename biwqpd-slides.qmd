@@ -1,0 +1,830 @@
+---
+title: "Bayesian Inference with Quantile-Parameterized Distributions"
+subtitle: "Encoding and updating uncertain judgments"
+author: "**Dmytro Perepolkin**<br>*PhD student, CEC*"
+institute: "Lund University"
+date: 2022-09-19
+title-slide-attributes:
+    data-background-image: fig/Lunds_universitet_original.svg.png
+    data-background-size: 20%
+    data-background-position: right 50px bottom 25px
+format:
+  revealjs: 
+    smaller: true
+    scrollable: true
+    theme: [simple, additional-styles.scss]
+    slide-number: true
+    preview-links: auto
+    logo: fig/qpd_hex.png
+    footer: "<https://bit.ly/biwqpd-slides>"
+    reference-location: document
+from: markdown+emoji
+bibliography: "`r rbbt::bbt_write_bib('biwqpd-slides.bib', translator='bibtex', overwrite = TRUE)`"
+resources:
+  - biwqpd-slides.pdf
+---
+
+## Roadmap
+
+```{r setup}
+#| echo: false
+#| message: false
+library(qpd)
+library(tidyverse)
+library(targets)
+library(patchwork)
+```
+
+
+We will touch on some of the following:
+
+-   Fitting the distribution to judgments and data.
+-   Smooth beliefs. QPD priors.
+-   Quantile-based inference
+    -   Quantile based prior and likelihood.
+-   Quantile-based quantile-parameterized likelihood.
+    -   Chronic bitter chocolate consumption example.
+-   Parametric quantile regression (interlude).
+-   Cumulative science and posterior passing
+
+## Fitting a distribution
+
+![](fig/moebius-loop.png){.absolute top="0" right="0" width="350"}
+
+- Fitting to data :thinking: 
+  - Posterior samples. 
+  - *Data-first*: [e]CDF
+- Fitting to judgments^[For Bayesians, probabilities represent the state of knowledge] 
+  - Quantile-probability pairs. 
+  - *Probability-first*: QF
+
+- Equally plausible ways to define a distribution [@tukey1965WhichPartSample]
+  - CDF/PDF: *density-defined* distributions
+  - QF/QDF:  *quantile* distributions
+ 
+
+$$
+f(Q(u))=\frac{dF(Q(u))}{dQ(u)} = \frac{dF(Q(u))/du}{dQ(u)/du} 
+= \frac{dF(F^{-1}(u))/du}{q(u)}=[q(u)]^{-1}
+$$
+
+## Fitting a distribution
+
+![](fig/square-peg.jpg){.absolute top="0" right="0" width="250"}
+
+Judgments: *junk* or *jewels*?
+
+::: {.incremental}
+- Inconsistent beliefs [@olsson2006KnowledgeInquiryEssays; @sahlin1990PhilosophyFPRamsey]
+- *Sampling* from beliefs [@hartmann2020FlexiblePriorElicitation] vs *fitting* to beliefs [@perepolkin2021HybridElicitationIndirect]
+
+Elicit QPPs and fit a "known" distribution
+
+- familiar $\approx$ convenient $\neq$ suitable [@ohagan2006UncertainJudgementsEliciting]
+- $X\in [0,1]$? Use Beta! 
+- Or Kumaraswamy? $Q(u|a,b)=(1-(1-u)^{\frac{1}{b}})^{\frac{1}{a}}$
+:::
+
+## Smooth beliefs
+
+:::: {.columns}
+::: {.column width="50%"}
+Drawing a curve through Q-P pairs
+
+- Infinite number of ways
+- Need a closed-form CDF (and QF?)
+- Problem of the tails & bounds
+
+```{r}
+#| echo: false
+#| fig-width: 8
+#| fig-height: 5.5
+#| fig-align: center
+#| out-width: "100%"
+pts <- tar_read(chocolate_nested) %>% unnest(c(p,q)) %>%
+  filter(Survey=="(Elderly, 2010)") 
+p_grd <- qpd::make_pgrid(100)
+dist1_df <- tibble::tibble(
+  rowid=1:3,
+  distribution=c("Myerson", "J-QPD-S", "Metalog"),
+  ps=list(p_grd, p_grd, p_grd),
+  qs=list(with(pts, qpd::qMyerson(p_grd, q[p==0.05], q[p==0.5], q[p==0.95], alpha = 0.05)),
+          with(pts, qpd::qJQPDS(p_grd, q[p==0.05], q[p==0.5], q[p==0.95], alpha = 0.05)),
+          with(pts, qpd::qmetalog(p_grd, qpd::fit_metalog(p[c(2:5)],q[c(2:5)], bl=0), bl=0))),
+  ds=list(with(pts, qpd::dqMyerson(p_grd, q[p==0.05], q[p==0.5], q[p==0.95], alpha = 0.05)),
+          with(pts, qpd::dJQPDS(with(pts, qpd::qJQPDS(p_grd, q[p==0.05], q[p==0.5], q[p==0.95], alpha = 0.05)), q[p==0.05], q[p==0.5], q[p==0.95], alpha = 0.05)),
+          with(pts, qpd::dqmetalog(p_grd, qpd::fit_metalog(p[c(2:5)],q[c(2:5)], bl=0), bl=0)))
+  ) %>% 
+  unnest(c(ps, qs, ds))
+
+p1 <- ggplot(dist1_df)+
+  geom_line(aes(x=qs, y=ps, color=distribution), size=0.75)+
+  geom_point(data=pts,aes(y=p, x=q), color="black")+
+  coord_cartesian(xlim = c(0,30))+
+  theme_minimal()+
+  scale_color_brewer(palette = "Set2")+
+  labs(y="CDF", x="Consumption, g/day", color="Distribution")
+p2 <- ggplot(dist1_df)+
+  geom_line(aes(x=qs, y=ds, color=distribution), size=0.75)+
+  coord_cartesian(xlim = c(0,30))+
+  theme_minimal()+
+  scale_color_brewer(palette = "Set2")+
+  labs(y="Density", x="Consumption, g/day", color="Distribution")
+patchwork::wrap_plots(p1,p2, ncol = 2, guides = "collect") +
+  patchwork::plot_annotation(
+      title="Chronic Bitter Chocolate Consumption",
+      subtitle="Swedish National Dietary Survey - Riksmaten elderly 2010-11",
+      caption="Source: EFSA Food Consumption Database",
+      theme = hrbrthemes::theme_ipsum_rc()
+  )
+```
+
+:::
+
+::: {.column width="50%"}
+
+Making your own QPD:
+
+| Reparameterization | Implicit function |
+|--------------------|--------------------|
+|Fix $p$ elicit $q$|Elicit $p,q$   |
+|Symmetrical Percentiles|Arbitrary percentiles^[Potentially] |
+|Myerson, J-QPD, [GLD(CSW)]{style="color:teal;"}|[Metalog]{style="color:teal;"}, SQN|
+
+Let's look at some examples
+
+[* Quantile distributions]{style="color:teal;font-size:0.5em"}
+:::
+
+::::
+
+
+![](fig/one-does-not-simply.png){.absolute bottom="0" right="0" width="450"}
+
+## Closer look: Myerson distribution
+
+The quantile function parameterized by three quantile values $q_1,q_2,q_3$ and a tail parameter $\alpha$ [@myerson2005ProbabilityModelsEconomic]
+
+$$
+\rho=q_3-q_2;\;
+\beta=\frac{\rho}{q_2-q_1};\;
+\kappa=\frac{\Phi^{-1}(u)}{\Phi^{-1}(1-\alpha)}\\
+Q_Y(u|q_1,q_2,q_3,\alpha)=\begin{cases}
+q_2+\rho\frac{\beta^{\kappa}-1}{\beta-1}, \quad &\beta \neq 1\\
+q_2+\rho\kappa, \quad &\beta =1
+\end{cases}
+$$
+
+where $u$ is the depth corresponding to the observations of $Y$ given the quantile triplet $\{q_1, q_2, q_3\}$, corresponding to probabilities $\{\alpha, 0.5, 1-\alpha\}$. The quantile parameterization is made possible by $\kappa$ which takes values $\{-1,0,1\}$ for the quantiles $\{q_1, q_2, q_3\}$, so that $Q(\alpha)=q_1$,  $Q(0.5)=q_2$ and $Q(1-\alpha)=q_3$.
+
+## Logit Myerson distribution
+
+We could replace the $\Phi^{-1}$ with $\text{logit(u)}=\ln\left(\frac{u}{1-u}\right)$ (closed form, simpler, higher kurtosis) so that $\kappa=\frac{\text{logit}(u)}{\text{logit}(1-\alpha)}$
+
+```{r}
+#| echo: false
+#| fig-width: 10
+#| fig-height: 6
+#| fig-align: center
+#| out-width: "100%"
+pts <- tar_read(chocolate_nested) %>% unnest(c(p,q)) %>%
+  filter(Survey=="(Elderly, 2010)") %>% 
+  select(Survey, p, q) #%>% 
+#  bind_rows(
+#    tibble::tribble(
+#      ~Survey, ~p, ~q,
+# "(Elderly, 2010)", 0.9, 13.7)
+#  )
+
+dist2_df <- tibble::tibble(
+  rowid=1:2,
+  distribution=c("Myerson", "LogitMyerson"),
+  ps=list(p_grd, p_grd),
+  qs=list(with(pts, qpd::qMyerson(p_grd, q[p==0.05], q[p==0.5], q[p==0.95], alpha = 0.05)),
+          with(pts, qpd::qlogitMyerson(p_grd, q[p==0.05], q[p==0.5], q[p==0.95], alpha = 0.05))),
+  ds=list(with(pts, qpd::dqMyerson(p_grd, q[p==0.05], q[p==0.5], q[p==0.95], alpha = 0.05)),
+          with(pts, qpd::dqlogitMyerson(p_grd, q[p==0.05], q[p==0.5], q[p==0.95], alpha = 0.05)))
+  ) %>% 
+  unnest(c(ps, qs, ds))
+
+p1 <- ggplot(dist2_df)+
+  geom_line(aes(x=qs, y=ps, color=distribution), size=0.75)+
+  geom_point(data=pts,aes(y=p, x=q), color="black")+
+  theme_minimal()+
+  scale_color_brewer(palette = "Set2")+
+  labs(color="Distribution",
+       y="QF", x="Consumption, g/day")
+
+p2 <- ggplot(dist2_df)+
+  geom_line(aes(x=qs, y=ds, color=distribution), size=0.75)+
+  theme_minimal()+
+  scale_color_brewer(palette = "Set2")+
+  labs(color="Distribution",
+       y="QF", x="Consumption, g/day")
+
+patchwork::wrap_plots(p1,p2, ncol = 2, guides = "collect")+ 
+  plot_annotation(
+    title="Myerson and Logit Myerson fits",
+    subtitle="Chronic Bitter Chocolate Consumption",
+    caption="Source: Swedish National Dietary Survey - Riksmaten elderly 2010-11. EFSA Food Consumption Database",
+    theme=hrbrthemes::theme_ipsum_rc()
+  )
+```
+
+This can be done with *any* symmetric standard quantile function, e.g. hyperbolic secant $\ln[\tan(\pi u/2)]$ or even Cauchy $\tan(\pi(u-1/2))$.
+
+## Implicit function parameterization
+
+Simple Q-Normal distribution [@keelin2011QuantileParameterizedDistributions] expands the $\mu$ and $\sigma$ parameters in the Normal distribution quantile function $Q_Y(u\vert\mu,\sigma)=\mu+\sigma\Phi^{-1}_Y(u)$ to be the function of the depth $u$, so that $\mu(u)= a_1+a_4u$ and $\sigma(u)=a_2+a_3u$. Thus the SQN QF is a linear combination
+
+$$
+Q_Y(u|a_1,a_2,a_3,a_4)=a_1+a_2\Phi^{-1}(u)+a_3u\Phi^{-1}(u)+a_4u
+$$
+Because $Q(p)=x$ the parameters $a_1,\dots,a_4$ can be determined using four quantile-probability pairs $\{p_i,x_i\}, \; i=\{1,2,\dots4\}$ plugged into the matrix equation $a=\mathbb{P}^{-1}x$, where $\mathbb{P}$ is an invertible matrix
+
+$$
+\mathbb P=\begin{bmatrix} 
+           1 & \Phi^{-1}(p_1) & p_1\Phi^{-1}(p_1) & p_1\\
+           1 & \Phi^{-1}(p_2) & p_2\Phi^{-1}(p_2) & p_2\\
+           1 & \Phi^{-1}(p_3) & p_3\Phi^{-1}(p_3) & p_3\\
+           1 & \Phi^{-1}(p_4) & p_4\Phi^{-1}(p_4) & p_4\end{bmatrix}
+$$
+
+Metalog distribution [@keelin2016MetalogDistributions] expands parameters in the *logistic QF* with a finite Taylor series of $n$ terms in a similar manner^[Includes semi-bounded (LogMetalog) and bounded (LogitMetalog)].
+
+## Closer look: SQN and Metalog
+
+Quantile function is valid iif it is non-decreasing on the whole $[0,1]$ interval [@gilchrist2000StatisticalModellingQuantile].
+
+```{r}
+#| echo: false
+#| fig-width: 14
+#| fig-height: 6
+#| fig-align: center
+#| out-width: "100%"
+pts <- tar_read(chocolate_nested) %>% unnest(c(p,q)) %>%
+  filter(Survey=="(Elderly, 2010)") %>% 
+  select(Survey, p, q) 
+
+av_sqn <- with(pts, fit_sqn(p=c(0.1, 0.5, 0.95, 0.99), 
+                  q=q[p %in% c(0.1, 0.5, 0.95, 0.99)]))
+#is_sqn_valid(av_sqn)
+ai_sqn <- with(pts, fit_sqn(p=c(0.05, 0.5, 0.95, 0.99), 
+                  q=q[p %in% c(0.05, 0.5, 0.95, 0.99)]))
+#is_sqn_valid(ai_sqn)
+
+a1_metalog <- with(pts, fit_metalog(p=c(0.1, 0.5, 0.95, 0.99), 
+                          q=q[p %in% c(0.1, 0.5, 0.95, 0.99)], bl=0))
+#is_metalog_valid(a1_metalog)
+
+a2_metalog <- with(pts, fit_metalog(p=c(0.05, 0.5, 0.95, 0.99), 
+                          q=q[p %in% c(0.05, 0.5, 0.95, 0.99)], bl=0))
+#is_metalog_valid(a2_metalog)
+p_grd <-  qpd::make_pgrid()
+dist3_df <- tibble::tibble(
+  rowid=1:4,
+  distribution=c("SQN", "SQN", "Metalog", "Metalog"),
+  valid=c("valid", "invalid", "valid", "valid"),
+  ps=list(p_grd, p_grd, p_grd, p_grd),
+  qs=list(qpd::qsqn(p_grd, av_sqn), qpd::qsqn(p_grd, ai_sqn), qpd::qmetalog(p_grd, a1_metalog, bl=0), qpd::qmetalog(p_grd, a2_metalog, bl=0)),
+  ds=list(qpd::dqsqn(p_grd, av_sqn), qpd::dqsqn(p_grd, ai_sqn), qpd::dqmetalog(p_grd, a1_metalog, bl=0), qpd::dqmetalog(p_grd, a2_metalog, bl=0))
+  ) %>% 
+  unnest(c(ps, qs, ds))
+
+p1 <- dist3_df %>% #filter(valid=="valid") %>% 
+  ggplot()+
+  geom_line(aes(y=qs, x=ps, color=fct_rev(distribution), 
+                linetype=fct_rev(valid), group=rowid), size=0.5)+
+  geom_point(data=pts, aes(x=p, y=q), color="black")+
+  coord_cartesian(ylim = c(-3,30))+
+  theme_minimal()+
+  scale_color_brewer(palette = "Set2")+
+  scale_linetype_discrete(guide="none")+
+  labs(linetype=NULL, color="Distribution",
+       x="QF", y="Consumption, g/day")
+
+
+p2 <- dist3_df %>% filter(valid=="valid") %>% ggplot()+
+  geom_line(aes(y=ds, x=qs, color=fct_rev(distribution), linetype=fct_rev(valid), group=rowid), size=0.5)+
+  theme_minimal()+
+  scale_color_brewer(palette = "Set2")+
+  scale_linetype_discrete(guide="none")+
+  coord_cartesian(ylim = c(0,0.12), xlim=c(-3,30))+
+  labs(linetype=NULL, color="Distribution",
+       x="Consumption, g/day", y="Density")
+
+patchwork::wrap_plots(p1, p2, ncol=2, guides = "collect")+
+  plot_annotation(
+    title="Four-term SQN and Metalog fits",
+    subtitle="Chronic Bitter Chocolate Consumption",
+    caption="Source: Swedish National Dietary Survey - Riksmaten elderly 2010-11. EFSA Food Consumption Database",
+    theme=hrbrthemes::theme_ipsum_rc()
+  )
+```
+
+Unfortunately, small change in the parameterizing quantiles can lead to an invalid quantile function. The feasibility conditions for 4-term metalog/SQN are studied in @keelin2011QuantileParameterizedDistributions and @keelin2017MetalogDistributionsFeasibility. General solution is, unfortunately, not available.
+
+## Quantile-parameterized prior: CDF
+
+Let the hyperparameter $\psi=\{q_1, q_2, q_3, \alpha\}$ for Myerson distribution of parameter $\mu$ in Normal model with a known variance.
+
+$$
+Y \sim Normal(\mu, \sigma)\\
+\mu \sim Myerson(\psi)\\
+\dots
+$$
+In this model, the posterior distribution of $\mu$ given the sample $\underline{y}$ can expressed as
+
+$$
+f(\mu|\underline{y})\propto \mathcal{L}(\mu,\sigma;\underline{y})f(\mu\vert\psi)
+$$
+
+where $f(\mu\vert\psi)$ is the (prior) PDF of the Myerson distribution. Note that the prior distribution of $\mu$ is defined by three quantiles $\{q_1, q_2, q_3\}$ and a tail parameter $\alpha$.
+
+## Quantile-parameterized prior: QF
+
+Quantile-parameterized prior can also be defined by the QF 
+
+$$
+Y \sim Normal(Q_\mu(u), \sigma)\\
+u \overset{\mu}{\backsim} Myerson(\psi)\\
+\dots
+$$
+
+In this model, the posterior distribution of the degenerate random variate $u$, representing the value of the parameter $\mu$ given the sample $\underline{y}$ can expressed as
+
+$$
+[q_\mu(u|\underline{y})]^{-1} \propto \mathcal{L}(Q_\mu(u\vert\psi),\sigma;\underline{y})[q_\mu(u \vert \psi)]^{-1}
+\lvert q_\mu(u|\psi)\rvert \implies\\
+[q_\mu(u|\underline{y})]^{-1} \propto \mathcal{L}(Q_\mu(u\vert\psi),\sigma;\underline{y})
+$$
+
+where $[q(u\vert\psi)]^{-1}$ is the (prior) DQF of Myerson distribution and $\lvert q_\mu(u|\psi)\rvert$ is the Jacobian adjustment.
+
+Density-defined and quantile-based priors lead to the same posterior beliefs.
+
+## Quantile-parameterized likelihood
+
+In order to enable learning, the $\{q,p\}$ pairs (QPPs) need to be allowed to vary. Any new set of drawn “QPP parameters” need to remain a valid QPT (e.g. no overlaps).
+
+:::: {.columns}
+::: {.column width="50%"}
+
+- Dependence between points can be specified using:
+  - Covariance matrix
+  - Multivariate distribution
+
+- “Monotonicity constraint” [@burkner2020ModellingMonotonicEffects]
+  - Look at the probability intervals as categories (adding up to 1)
+  - We can assign a Dirichlet prior to the uncertainty about the width of the probability bands
+
+:::
+
+::: {.column width="50%"}
+![](fig/adults2010cats-1.png)
+:::
+::::
+
+## Quantile-parameterized likelihood
+
+Dirichlet/CM [@elfadaly2013ElicitingDirichletConnor] prior for probability “bands” corresponding to fixed vector of $q*$ ➡ QDirichlet prior
+
+We can represent probabilities as relative frequencies from a hypothetical sample [@hoffrage2002RepresentationFacilitatesReasoning]
+
+:::: {.columns}
+::: {.column width="40%"}
+
+[**Interviewer**: Consider a sample of bitter chocolate consumers, say 100 people. According to your assessment there should be only 24 people that consume up to one bit of chocolate a day. We will interpret this assessment as you believing that there’s about equal chance that the actual number of morning coffee consumers (0-4 g/day) in this sample will be above or below 24, i.e we will interpret it as the median assessment. Would you like to reconsider this value?]{style="font-size: 0.7em; line-height: 1em"}
+
+:::
+::: {.column width="60%"}
+![](fig/adults2010cats-1.png)
+:::
+::::
+
+## Hybrid elicitation
+
+Conditional* SPT for each band; last band assessed as $(1-\sum p)$. Fit Beta distribution to each triplet. 
+Assemble into parameter vector(s) of Dirichlet (CM) distribution [@elfadaly2013ElicitingDirichletConnor]
+
+:::::: {.columns}
+::::: {.column width="40%"}
+|   | Category                   | P25 | P50 | P75 |
+|---|----------------------------|----:|----:|----:|
+| 1 | Morning coffee (0-4 g/day) |  20 |  24 |  30 |
+| 2 | After dinner  (4-8 g/day)  |  25 |  31 |  36 |
+| 4 | Sweet tooth  (16+ g/day)   |   5 |  15 |  20 |
+
+Encoded into the Dirichlet vector $\alpha=\{ `r paste0(sprintf(tar_read(dir_df)[["a"]], fmt = "%#.2f"))`\}$ describing uncertainty in the cumulative probabilities corresponding to the quantile values $q^*=\{4,8,16\}$.
+
+Result: 2D distribution characterizing the uncertainty in the quantiles of the hypothetical sample
+
+Note: implied correlation structure
+:::::
+
+::::: {.column width="60%"}
+
+:::: {.r-stack}
+::: {.fragment .fade-out}
+
+```{r}
+#| fig-width: 5
+#| fig-height: 4
+N <-1000
+q_star <- c(4,8,16)
+dir_par <- tar_read(dir_df)
+p_grd <- make_pgrid(100)
+
+set.seed(42)
+prior_met <- qpd::rdir(N,dir_par$a) %>% 
+  isim_to_cprob(dir_par$cat_idx) %>% 
+  apply(1, function(p) qpd::fit_metalog(p, q_star, bl=0)) %>% t()
+
+valid_mtlgs <- tibble::tibble(.draw=seq_len(N)) %>% 
+  mutate(metlg=map(.draw, ~prior_met[.x,])) %>% 
+  mutate(vald=map_lgl(metlg, qpd::is_metalog_valid, bl=0, n_grid=1000, s_grid=1)) %>% 
+  filter(vald) 
+
+prp_mtlg_plot_data <- valid_mtlgs %>% 
+  mutate(drws=map(metlg, 
+            ~tibble::tibble(p_grd=p_grd,
+                            q_grd=qpd::qmetalog(p_grd, .x, bl=0),
+                            d_grd=qpd::dqmetalog(p_grd, .x, bl=0))
+            )) %>% 
+  unnest(drws) 
+
+p1 <- prp_mtlg_plot_data %>% 
+  ggplot()+
+  geom_line(aes(x=q_grd, y=p_grd, group=.draw), alpha=0.01)+
+  coord_cartesian(xlim = c(0,50), expand = FALSE)+
+  scale_x_continuous(breaks = seq(0,50, by=10))+
+  hrbrthemes::theme_ipsum_rc(grid=FALSE)+
+  labs(title="Chronic Bitter Chocolate Consumption",
+       subtitle="Prior predictive draws",
+       x="Consumption, g/day",
+       y="CDF")
+
+p2 <- prp_mtlg_plot_data %>% 
+  ggplot()+
+  geom_line(aes(x=q_grd, y=d_grd, group=.draw), alpha=0.01)+
+  coord_cartesian(xlim = c(0,50), ylim=c(0,0.2), expand = FALSE)+
+  scale_x_continuous(breaks = seq(0,50, by=10))+
+  hrbrthemes::theme_ipsum_rc(grid=FALSE)+
+  labs(#title="Chronic Bitter Chocolate Consumption",
+       #subtitle="Prior predictive draws",
+       x="Consumption, g/day",
+       y="PDF", caption="Simulated from the elicited Dirichlet distribution")
+
+p1+p2
+```
+:::
+
+```{r}
+#| fig-width: 5
+#| fig-height: 4
+valid_mtlgs %>% 
+  mutate(qntls=map(metlg,
+                   ~tibble::tibble(P=c(0.05, 0.5, 0.95),
+                                   cat=c("Low Consumer","Median Consumer", "High Consumer"),
+                                   Q=qmetalog(P, .x, bl=0)))) %>% 
+   unnest(qntls) %>% 
+  filter(Q<200) %>% 
+  ggplot(aes(x=Q, y=fct_inorder(cat)))+
+  ggdist::stat_halfeye(adjust=0.5, justification=-.12, .width=0, point_colour=NA)+
+  geom_boxplot(width=.12, outlier.color = NA, alpha=0.01)+
+  ggdist::stat_dots(side="left", justification=1.12, dotsize=50)+
+  #coord_cartesian(xlim = c(0,100), expand=FALSE)+
+  #scale_x_continuous(breaks = seq(0,100, by=10))+
+  hrbrthemes::theme_ipsum_rc(grid=FALSE)+
+  facet_wrap(vars(fct_inorder(cat)), ncol=1, scales = "free")+
+  labs(y=NULL, x="Consumption, g/day",
+       caption="Low and high consumer represents 0.05 and 0.95 quantile, respectively")+
+  theme(strip.text = element_blank())
+
+```
+
+::::
+:::::
+::::::
+
+##  QDirichlet-Metalog model
+
+:::: {.columns}
+::: {.column width="80%"}
+1. Elicit the vector of quantile values $q^*$
+1. Elicit uncertainty in associated cumulative probabilities (possible values of $p$)
+
+$$
+\begin{aligned}
+&\Delta \sim Dirichlet(\alpha|q^*);\\
+&p \equiv \Xi_1^n(\Delta)\\
+& u \eqsim \widehat {Q^{-1}_X}(x\vert p,q^*)\\
+&u \overset{x}{\backsim} Metalog(p,q^*)
+\end{aligned}
+$$
+
+where $\Xi$ is the cumulative sum operator and $\widehat {Q^{-1}_X}$ is numerically estimated inverse of Metalog quantile function. The density is calculated using the DQF.
+:::
+::: {.column width="20%"}
+![](fig/brain-meme.jpg){.absolute right=0 width="350"}
+:::
+::::
+
+## Quantile-based inference
+
+Bayesian updating can be restated in terms of quantile functions and their densities [@nair2020BayesianInferenceQuantile; @perepolkin2021TenetsQuantilebasedInference]
+
+Given a random sample of $\underline {y}$ of size $n$ we can compute $\underline {Q}=\{Q(u_1), Q(u_2), \dots Q(u_n)\}$, such that $u_i=F(y_i\vert\theta)$, $i=\{1,2,\dots,n\}$.
+
+$$
+\begin{align}
+f(\theta\vert\underline{y}) \propto &\mathcal{L}(\theta;\underline{y})f(\theta)\\
+\Downarrow\\
+f(\theta\vert\underline{Q}) \propto &\mathcal{L}(\theta;\underline{Q})f(\theta)\\
+ &\mathcal{L}(\theta;\underline{Q})= \prod_{i=1}^nf(Q(u_i|\theta))=\prod_{i=1}^n[q(u_i|\theta)]^{-1}
+ \end{align}
+$$
+
+
+Since the likelihood $\mathcal{L}$ is expressed in terms of the *depths* $u_i\vert\theta$, additional step is required to arrive at $\underline{u}=F_Y(\underline{y}\vert\theta)=\widehat{Q_Y^{-1}}(\underline{y}\vert\theta)$ for quantile distributions [@perepolkin2021TenetsQuantilebasedInference]
+
+## Implementation
+
+1. Sample a simplex, aggregate, combine with $q^{*}$ and converted into metalog $a$ vector using the matrix equation above. 
+1. Approximate values of depth $u$ by root-finding
+1. Compute log-likelihood using Metalog DQF
+
+``` {stan}
+#| eval: false
+#| echo: true
+#| output.var: "none"
+#| code-line-numbers: "1-7,15|17|18"
+parameters {
+  simplex[4] delta; // dirichlet sample - a simplex
+}
+transformed parameters{
+  // go from indexed-delta-quantile parameterization to metalog a-coeffs
+  vector[3] as = logmetalog_reparameterize(delta, idx, qntls, bl);
+}
+
+model {
+  vector[N] u;
+  // create grid of xs given the parameter for initial guesses of u
+  vector[M] xs_grd = logmetalog3_v_qf(ys_grd, as, bl);
+  vector[N] u_guess = vlookup(x_srt, xs_grd, ys_grd);
+
+  target += dirichlet_lpdf(delta | a);
+  for (i in 1:N){
+   u[i] = approx_cdf_algebra(x_srt[i], u_guess[i], as, bl, rel_tol, f_tol, max_steps);
+   target += logmetalog_s_ldqf_lpdf(u[i] | as, bl);
+  }
+}
+```
+
+## TL;DR
+
+Asking experts to provide their uncertainty about the elicited QPT is enough to quantify the uncertainty about the food consumption distribution. This approach is particularly useful when the data is sparse.
+
+:::::: {.columns}
+
+::::: {.column width="40%"}
+
+### Hybrid elicitation
+
+Observations-level parametric elicitation for quantile-parameterized models [@perepolkin2021HybridElicitationIndirect]. 
+
+QDirichlet (QCM) prior is a 2D distribution, which separates aleatory and epistemic uncertainty.
+
+QDirichlet-Metalog is a *quantile-based* quantile-parameterized model
+:::::
+
+::::: {.column width="60%"}
+
+:::: {.r-stack}
+::: {.fragment .fade-out}
+
+```{r}
+#| fig-width: 5
+#| fig-height: 4
+draws_as_df <- tar_read(draws_as_df) %>% slice_sample(n=1000)
+choc_obs <- tar_read(choc_obs_df) %>%  unnest(obs) %>%  pull()
+p_grd <- make_pgrid(100)
+
+pp_mtlg_plot_data <- draws_as_df %>% 
+  mutate(xs=map(as, ~tibble::tibble(y=p_grd,
+                                    x=qmetalog(y, .x, bl=0),
+                                    d=dqmetalog(y, .x, bl=0)))) %>% 
+  unnest(xs)
+
+p1 <-  pp_mtlg_plot_data %>% 
+  ggplot()+
+  stat_ecdf(data=enframe(choc_obs), aes(x=value), lwd=1, color="#2B2D42")+
+  geom_line(aes(x=x, y=y, group=.draw), alpha=0.01)+
+  hrbrthemes::theme_ipsum_rc(grid = FALSE)+
+  coord_cartesian(xlim = c(0,50), expand=FALSE)+
+  scale_x_continuous(breaks = seq(0,50, by=10))+
+  labs(title="Chronic Bitter Chocolate Consumption",
+       subtitle="Posterior draws and data from Riksmaten 2016 for adolescents",
+       x="Consumption, g/day",
+       y="CDF")
+
+p2 <- pp_mtlg_plot_data %>% 
+  ggplot()+
+  geom_line(aes(x=x, y=d, group=.draw), alpha=0.01)+
+  coord_cartesian(xlim = c(0,50), ylim=c(0,0.2), expand = FALSE)+
+  scale_x_continuous(breaks = seq(0,50, by=10))+
+  hrbrthemes::theme_ipsum_rc(grid=FALSE)+
+  labs(#title="Chronic Bitter Chocolate Consumption",
+       #subtitle="Prior predictive draws",
+       x="Consumption, g/day",
+       y="PDF", caption="Simulated from the elicited Dirichlet distribution")
+
+patchwork::wrap_plots(p1, p2, nrow = 1, widths = c(1,1))
+```
+:::
+
+```{r}
+#| fig-width: 5
+#| fig-height: 4
+draws_as_df %>% 
+  #slice(1:1000) %>% 
+  mutate(cons=map(as, ~ tibble::tibble(P=c(0.05, 0.5, 0.95),
+                                       cat=c("Low Consumer","Median Consumer", "High Consumer"),
+                                       Q=qmetalog(P, .x, bl=0)))) %>% 
+  unnest(cons) %>% 
+  ggplot(aes(x=Q, y=fct_inorder(cat)))+
+  ggdist::stat_halfeye(adjust=0.5, justification=-.12, point_colour=NA)+
+  geom_boxplot(width=.12, outlier.color = NA, alpha=0.5)+
+  ggdist::stat_dots(side="left", justification=1.12, dotsize=50)+
+  #coord_cartesian(xlim = c(0,100), expand=FALSE)+
+  #scale_x_continuous(breaks = seq(0,100, by=10))+
+  hrbrthemes::theme_ipsum_rc(grid=FALSE)+
+  facet_wrap(vars(fct_inorder(cat)), ncol=1, scales = "free")+
+  labs(y=NULL, x="Consumption, g/day",
+       caption="Low and high consumer represents 0.05 and 0.95 quantile, respectively")+
+  theme(strip.text = element_blank())
+```
+::::
+:::::
+::::::
+
+## Other uses of quantile-based likelihoods
+
+- Distributions defined by a *non-invertible quantile function* (GLD, Wakeby, Govindarajulu, g-and-h, g-and-k, FSLD, etc). 
+- More can be created using Gilchrist's QF transformation rules [@gilchrist2000StatisticalModellingQuantile].
+
+### Parametric quantile regression
+
+Linear regression of $Y$ given the covariate $X$ can be expressed as
+
+$$
+y_i=\underbrace{\alpha+\beta x_i}_{\small{\text{deterministic term }}}+\underbrace{\varepsilon_i}_{\small{\text{stochastic term }}}
+$$
+
+The distribution of the error term $\varepsilon_i$ can be expressed through a standard quantile function $S_\varepsilon(u_i \vert \theta)$
+
+$$
+y_i=\alpha+\beta x_i+S_\varepsilon(u_i \vert \theta)
+$$
+
+where $S(u\vert\theta)=Q_s(u\vert\theta)-Q_s(0.5\vert\theta)$ is centered *basic* QF which can be generalized into regular $Q(u|\mu,\sigma,\theta)=\mu+\sigma Q_s(u\vert\theta)$ with location $\mu$ and scale $\sigma$.
+
+
+## Parametric Quantile Regression
+
+The whole regression equation can be expressed as a quantile function 
+
+$$
+Q_Y(u_i\vert\mu_i,\theta)=\mu_i+S_\varepsilon(u_i\vert\theta)
+$$
+where $\mu_i=\alpha+\beta x_i$ and scale parameter $\sigma=1$. If $\sigma \propto x_i$ the model can capture heteroscedasticity of the error term.
+
+Find depth $u_i$ by inverting the PQR QF $u_i=\widehat{Q_Y^{-1}}(y_i\vert\mu_i,\theta)$.
+
+Because the deterministic term $\mu_i$ in PQR QF $Q_Y(u_i\vert\mu_i,\theta)$ is additive and does not depend on the depth $u_i$ it can be dropped from the derivative.
+
+$$
+\begin{gathered}
+\left[q_Y(u_i \vert \mu_i, \theta)\right]^{-1}=\left[\frac{dQ_Y(u_i \vert \mu_i, \theta)}{du}\right]^{-1} 
+= \left[\frac{dS_\varepsilon(u_i\vert\theta)}{du}\right]^{-1}=[q_\varepsilon(u_i\vert\theta)]^{-1}
+\end{gathered}
+$$
+
+where $[q_\varepsilon(u_i\vert\theta)]^{-1}$ is the *density quantile function* of the error term. 
+
+**Why bother?** Explicitly modeled error term described by a flexible (possibly quantile) distribution + non-crossing posterior quantiles.
+
+## PQR example
+
+Car stopping distance dataset [@mosteller2013BeginningStatisticsData] quoted by @gilchrist2000StatisticalModellingQuantile. 30 observations, 2 variables (speed, distance). Predict `speed` by `distance`. From physics class, $distance \approx speed^2$. Priors for the regression parameters are elicited and fitted. 
+
+
+```{r}
+#| fig-width: 12
+#| fig-height: 5
+#| fig-align: "center"
+#| out-width: "100%"
+prior_df <- tibble::tibble(p=qpd::make_pgrid(300),
+               intercept_q=qpd::qlogitMyerson(p, 0, 5, 11, alpha=0.1),
+               intercept_d=qpd::dqlogitMyerson(p, 0, 5, 11, alpha=0.1),
+               #slope_q=qpd::qfsld(p, 2, 2, 0.8, 2),
+               slope_q=qpd::qlogitMyerson(p, 2, 5, 12, alpha=0.1),
+               #slope_d=qpd::dqfsld(p, 2, 2, 0.8, 2)
+               slope_d=qpd::dqlogitMyerson(p, 2, 5, 12, alpha=0.1)
+               )
+
+prior_df %>% 
+  pivot_longer(-p, names_to = c("parameter", "function"), names_sep = "_", values_to = "val") %>% 
+  pivot_wider(id_cols = c("p", "parameter"), names_from = "function", values_from = "val") %>% 
+  ggplot(aes(x=q, y=d, color=parameter))+
+  geom_line()+
+  coord_cartesian(xlim = c(-10, 25))+
+  hrbrthemes::theme_ipsum_rc(grid=FALSE)+
+  scale_color_brewer(palette="Set1")+
+  labs(title="Prior distribution of slope and intercept in PQR",
+       subtitle = "Logit-Myerson distribution",
+       x="Q(u)", y="1/q(u)")
+```
+
+## Crafting the distribution for the error term
+
+As discussed, $speed \propto \sqrt{distance}$. Likely heteroscedastic due to intertia. 
+
+- Expect the error to be flatter than normal, possibly skewed. 
+- Start with a well-known basic logistic QF $Q_s(u)=\ln(u)-\ln(1-u)$. 
+- Introduce skeweness parameter $\delta$ to weigh the exponential tails (Skew-Logistic QF) [@gilchrist2000StatisticalModellingQuantile] 
+$Q_s(u)=(1-\delta)\ln(u)-\delta\ln(1-u)$. 
+- We can also mix in the uniform distribution to allow for thicker tails (Flattened Skew-Logistic QF)
+
+$$
+Q_s(u\vert\eta, \delta,\kappa)=\eta\left[(1-\delta)\ln(u)-\delta\ln(1-u)+\kappa u\right]
+$$
+
+where $\eta,\kappa>0$ and $0\leq\delta\leq1$.
+
+If we make the shape parameter $\eta$ to be dependent on the covariate $x_i$, the error term model can capture heteroscedasticity.
+
+## Parametric Quantile Regression model
+
+$$
+f(\alpha, \beta, \theta  \vert \underline{Q_Y},\underline{x}) \propto \mathcal{L}(\theta;\underline{Q_Y},\alpha, \beta, \theta, \underline{x})f(\theta) \\
+\mathcal{L}(\theta;\underline{Q_Y}, \alpha, \beta, \theta, \underline{x}) = \prod_{i=1}^n f(Q_Y(u_i \vert \alpha,\beta, \theta;x_i))
+= \prod_{i=1}^n\left[{q_\varepsilon(u_i} \vert \theta)x_i\right]^{-1}\\
+$$
+
+The model becomes
+
+$$
+\begin{gathered}
+Q_Y(\underline{u} \vert \alpha,\beta, \theta; \underline{x}) = \alpha+\beta\sqrt{\underline{x}} 
++S_\varepsilon(\underline{u};\theta)\sqrt{\underline x}\\
+u \overset{y}{\backsim} Q_Y(\alpha,\beta, \theta; \underline{x})\\
+\alpha \sim \text{LogitMyerson}(0,5,11; 0.1)\\
+\beta \sim \text{LogitMyerson}(2,5,12; 0.1)\\
+\eta \sim \text{Exp}(1/2)\\
+\delta \sim \text{Beta}(2,1)\\
+\kappa \sim \text{Exp}(1/0.1)
+\end{gathered}
+$$
+
+where $y$ is speed and $x$ is *square root of distance*, $\theta=\{\eta,\delta,\kappa\}$, $\beta,\eta,\kappa>0$ and $0\leq\delta\leq1$.
+
+## Results
+
+```{r}
+tar_read(fld_pqr_draws) %>% 
+  posterior::summarise_draws() %>% 
+  knitr::kable(digits = 3)
+```
+
+
+```{r}
+#| fig-align: center
+tar_read(fld_pqr_draws) %>% 
+  bayesplot::mcmc_combo()
+```
+
+## Results
+
+```{r}
+tar_read(fld_pqr_draws) %>% 
+    bayesplot::mcmc_pairs(off_diag_args = list(size = 1, alpha = 0.02))
+```
+
+## Posterior predictive 
+
+```{r}
+tar_read(fld_ppc_draws) %>% 
+  ggplot()+
+  geom_line(aes(x=ds, y=ys, group=paste(ps,draw), color=factor(ps)), alpha=0.05, show.legend = FALSE)+
+  geom_point(data=tar_read(carstop_data), aes(x=d, y=s), color="black", size=2)+
+  hrbrthemes::theme_ipsum_rc(grid=FALSE)+
+  scale_color_brewer(palette = "Set2")+
+  labs(title="Quantile Parametric Regression for car stopping data",
+       subtitle = "Hypothethical outcome plots for the 5th, 50th, and 95th quantile",
+    x="Stopping distance(d)", y="Speed(s)")
+```
+
+
+
+## References
