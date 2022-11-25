@@ -16,7 +16,7 @@ The example requires several R packages, and `targets` must be version
 
 ``` r
 remotes::install_github("dmi3kno/qpd")
-install.packages(c("targets", "tarchetypes","extraDistr", "tidyverse", "posterior", "rstan", "fmcmc", "details"))
+install.packages(c("targets","stantargets" "tarchetypes","extraDistr", "tidyverse", "posterior", "rstan", "fmcmc", "details"))
 ```
 
 # Setup
@@ -27,8 +27,9 @@ Markdown document in order for Target Markdown code chunks to work.
 
 ``` r
 library(targets)
+library(stantargets)
 library(magrittr)
-tar_unscript()
+targets::tar_unscript()
 ```
 
 # Globals
@@ -300,6 +301,61 @@ tar_target(fld_ppc_draws, {
 #> Establish _targets.R and _targets_r/targets/fld_ppc_draws.R.
 ```
 
+# Posterior passing
+
+``` r
+tar_target(birdsdata, {
+  set.seed(1234)
+  
+  ## Generate simulated data
+  ## data.fn() is defined in bpa-code.txt, available at
+  ## http://www.vogelwarte.ch/de/projekte/publikationen/bpa/complete-code-and-data-files-of-the-book.html
+  p610 <- read.table("data/p610.txt", header = TRUE)
+  y <- p610[,5:9]                         # Grab counts
+  y[y > 1] <- 1                           # Convert to det-nondetections
+  ever.observed <- apply(y, 1, max)
+  wt <- p610$bm[ever.observed == 1]       # Body mass
+  yy <- as.matrix(y[ever.observed == 1,]) # Detection histories
+  dimnames(yy) <- NULL
+  
+  ## Augment both data sets
+  nz <- 150
+  yaug <- rbind(yy, array(0, dim = c(nz, ncol(yy))))
+  logwt3 <- c(log(wt^(1/3)), rep(NA, nz))
+  
+  ## Bundle data
+  bsize <- logwt3[1:nrow(yy)]
+  list(y = yaug,
+       bsize = bsize - mean(bsize),
+       M = nrow(yaug),
+       `T` = ncol(yaug),
+        C = nrow(yy),
+        prior_sd_upper = 3)
+})
+#> Define target birdsdata from chunk code.
+#> Establish _targets.R and _targets_r/targets/birdsdata.R.
+```
+
+These initialization functions will be used in initializing the STAN
+models
+
+``` r
+initfun_mtx <- function() list(beta = runif(1, 0, 1),
+                              mu_size = rnorm(1, 0, 1))
+#> Establish _targets.R and _targets_r/globals/qpppp-globals-ifuns1.R.
+```
+
+Compile and fit MtX model
+
+``` r
+stantargets::tar_stan_mcmc(mod_mtx, stan_files = "stan/MtX.stan",
+               data = birdsdata, init = initfun_mtx,# pars = params,
+               parallel_chains = 4, iter_sampling = 15000-5000, iter_warmup = 5000, thin = 10,
+               seed=42, max_treedepth = 15,
+              variables = c("beta", "omega", "mu_size", "sd_size"))
+#> Establish _targets.R and _targets_r/targets/MtXmodel.R.
+```
+
 ## Execute all targets
 
 The following code will remove the old logs, re-build the outdated
@@ -315,14 +371,21 @@ will be ran each individually, as the sub-tasks.
 unlink("logs", recursive = TRUE)
 targets::tar_make()
 #> ✔ skip target fit_dirmetalog_file_mtqd_mod
+#> ✔ skip target birdsdata
 #> ✔ skip target chocolate_nested
+#> ✔ skip target mod_mtx_file_MtX
 #> ✔ skip target carstop_data
 #> ✔ skip target elicited_data
+#> ✔ skip target mod_mtx_data
 #> ✔ skip target choc_obs_df
 #> ✔ skip target fld_pqr_fit
 #> ✔ skip target dir_df
+#> ✔ skip target mod_mtx_mcmc_MtX
 #> ✔ skip target fld_pqr_draws
 #> ✔ skip target choc_data
+#> ✔ skip target mod_mtx_summary_MtX
+#> ✔ skip target mod_mtx_diagnostics_MtX
+#> ✔ skip target mod_mtx_draws_MtX
 #> ✔ skip target fld_ppc_draws
 #> ✔ skip target fit_dirmetalog_data
 #> ✔ skip target fit_dirmetalog_mcmc_mtqd_mod
@@ -330,7 +393,7 @@ targets::tar_make()
 #> ✔ skip target fit_dirmetalog_summary_mtqd_mod
 #> ✔ skip target fit_dirmetalog_diagnostics_mtqd_mod
 #> ✔ skip target draws_as_df
-#> ✔ skip pipeline: 0.154 seconds
+#> ✔ skip pipeline [0.212 seconds]
 ```
 
 The targets dependency graph helps your readers understand the steps of
@@ -354,7 +417,7 @@ tar_progress_summary()
 #> # A tibble: 1 × 6
 #>   skipped started built errored canceled since        
 #>     <int>   <int> <int>   <int>    <int> <chr>        
-#> 1      16       0     0       0        0 0.044 seconds
+#> 1      23       0     0       0        0 0.042 seconds
 ```
 
 The results can be retrieved by the name of the subtask. For example,
@@ -416,7 +479,7 @@ sessioninfo::session_info()%>%
 
 ─ Session info ───────────────────────────────────────────────────────────────
  setting  value
- version  R version 4.2.1 (2022-06-23)
+ version  R version 4.2.2 Patched (2022-11-10 r83330)
  os       Ubuntu 20.04.5 LTS
  system   x86_64, linux-gnu
  ui       X11
@@ -424,55 +487,80 @@ sessioninfo::session_info()%>%
  collate  en_US.UTF-8
  ctype    en_US.UTF-8
  tz       Europe/Stockholm
- date     2022-09-20
- pandoc   2.18 @ /usr/lib/rstudio/bin/quarto/bin/tools/ (via rmarkdown)
+ date     2022-11-25
+ pandoc   2.19.2 @ /usr/lib/rstudio/bin/quarto/bin/tools/ (via rmarkdown)
 
 ─ Packages ───────────────────────────────────────────────────────────────────
- package     * version date (UTC) lib source
- backports     1.4.1   2021-12-13 [1] CRAN (R 4.2.0)
- base64url     1.4     2018-05-14 [1] CRAN (R 4.2.0)
- callr         3.7.1   2022-07-13 [1] CRAN (R 4.2.1)
- cli           3.3.0   2022-04-25 [1] CRAN (R 4.2.0)
- clipr         0.8.0   2022-02-22 [1] CRAN (R 4.2.0)
- codetools     0.2-18  2020-11-04 [4] CRAN (R 4.0.3)
- data.table    1.14.2  2021-09-27 [1] CRAN (R 4.2.0)
- desc          1.4.1   2022-03-06 [1] CRAN (R 4.2.0)
- details       0.3.0   2022-03-27 [1] CRAN (R 4.2.0)
- digest        0.6.29  2021-12-01 [1] CRAN (R 4.2.0)
- ellipsis      0.3.2   2021-04-29 [1] CRAN (R 4.2.0)
- evaluate      0.15    2022-02-18 [1] CRAN (R 4.2.0)
- fansi         1.0.3   2022-03-24 [1] CRAN (R 4.2.0)
- fastmap       1.1.0   2021-01-25 [1] CRAN (R 4.2.0)
- glue          1.6.2   2022-02-24 [1] CRAN (R 4.2.0)
- htmltools     0.5.2   2021-08-25 [1] CRAN (R 4.2.0)
- httr          1.4.3   2022-05-04 [1] CRAN (R 4.2.0)
- igraph        1.3.1   2022-04-20 [1] CRAN (R 4.2.0)
- knitr         1.39    2022-04-26 [1] CRAN (R 4.2.0)
- lifecycle     1.0.1   2021-09-24 [1] CRAN (R 4.2.0)
- magrittr    * 2.0.3   2022-03-30 [1] CRAN (R 4.2.0)
- pillar        1.8.1   2022-08-19 [1] CRAN (R 4.2.1)
- pkgconfig     2.0.3   2019-09-22 [1] CRAN (R 4.2.0)
- png           0.1-7   2013-12-03 [1] CRAN (R 4.2.0)
- processx      3.7.0   2022-07-07 [1] CRAN (R 4.2.1)
- ps            1.7.1   2022-06-18 [1] CRAN (R 4.2.1)
- purrr         0.3.4   2020-04-17 [1] CRAN (R 4.2.0)
- R6            2.5.1   2021-08-19 [1] CRAN (R 4.2.0)
- rlang         1.0.5   2022-08-31 [1] CRAN (R 4.2.1)
- rmarkdown     2.14    2022-04-25 [1] CRAN (R 4.2.1)
- rprojroot     2.0.3   2022-04-02 [1] CRAN (R 4.2.0)
- rstudioapi    0.13    2020-11-12 [1] CRAN (R 4.2.0)
- sessioninfo   1.2.2   2021-12-06 [1] CRAN (R 4.2.0)
- stringi       1.7.8   2022-07-11 [1] CRAN (R 4.2.1)
- stringr       1.4.0   2019-02-10 [1] CRAN (R 4.2.0)
- targets     * 0.12.0  2022-04-19 [1] CRAN (R 4.2.0)
- tibble        3.1.8   2022-07-22 [1] CRAN (R 4.2.1)
- tidyselect    1.1.2   2022-02-21 [1] CRAN (R 4.2.0)
- utf8          1.2.2   2021-07-24 [1] CRAN (R 4.2.0)
- vctrs         0.4.1   2022-04-13 [1] CRAN (R 4.2.0)
- withr         2.5.0   2022-03-03 [1] CRAN (R 4.2.0)
- xfun          0.31    2022-05-10 [1] CRAN (R 4.2.0)
- xml2          1.3.3   2021-11-30 [1] CRAN (R 4.2.0)
- yaml          2.3.5   2022-02-21 [1] CRAN (R 4.2.0)
+ package        * version    date (UTC) lib source
+ abind            1.4-5      2016-07-21 [1] CRAN (R 4.2.0)
+ assertthat       0.2.1      2019-03-21 [1] CRAN (R 4.2.0)
+ backports        1.4.1      2021-12-13 [1] CRAN (R 4.2.0)
+ base64url        1.4        2018-05-14 [1] CRAN (R 4.2.0)
+ callr            3.7.3      2022-11-02 [1] CRAN (R 4.2.2)
+ checkmate        2.1.0      2022-04-21 [1] CRAN (R 4.2.0)
+ cli              3.4.1      2022-09-23 [1] CRAN (R 4.2.2)
+ clipr            0.8.0      2022-02-22 [1] CRAN (R 4.2.0)
+ cmdstanr         0.5.2      2022-05-08 [1] Github (stan-dev/cmdstanr@c39aeb4)
+ codetools        0.2-18     2020-11-04 [4] CRAN (R 4.0.3)
+ colorspace       2.0-3      2022-02-21 [1] CRAN (R 4.2.0)
+ data.table       1.14.6     2022-11-16 [1] CRAN (R 4.2.2)
+ DBI              1.1.3      2022-06-18 [1] CRAN (R 4.2.1)
+ desc             1.4.1      2022-03-06 [1] CRAN (R 4.2.0)
+ details          0.3.0      2022-03-27 [1] CRAN (R 4.2.0)
+ digest           0.6.30     2022-10-18 [1] CRAN (R 4.2.2)
+ distributional   0.3.1      2022-09-02 [1] CRAN (R 4.2.2)
+ dplyr            1.0.10     2022-09-01 [1] CRAN (R 4.2.1)
+ evaluate         0.18       2022-11-07 [1] CRAN (R 4.2.2)
+ fansi            1.0.3      2022-03-24 [1] CRAN (R 4.2.0)
+ farver           2.1.1      2022-07-06 [1] CRAN (R 4.2.2)
+ fastmap          1.1.0      2021-01-25 [1] CRAN (R 4.2.0)
+ fs               1.5.2      2021-12-08 [1] CRAN (R 4.2.0)
+ fst              0.9.8      2022-02-08 [1] CRAN (R 4.2.0)
+ fstcore          0.9.12     2022-03-23 [1] CRAN (R 4.2.0)
+ generics         0.1.3      2022-07-05 [1] CRAN (R 4.2.1)
+ ggplot2          3.4.0      2022-11-04 [1] CRAN (R 4.2.2)
+ glue             1.6.2      2022-02-24 [1] CRAN (R 4.2.0)
+ gtable           0.3.1      2022-09-01 [1] CRAN (R 4.2.2)
+ htmltools        0.5.3      2022-07-18 [1] CRAN (R 4.2.2)
+ httr             1.4.4      2022-08-17 [1] CRAN (R 4.2.2)
+ igraph           1.3.5      2022-09-22 [1] CRAN (R 4.2.2)
+ knitr            1.41       2022-11-18 [1] CRAN (R 4.2.2)
+ lifecycle        1.0.3      2022-10-07 [1] CRAN (R 4.2.2)
+ magrittr       * 2.0.3      2022-03-30 [1] CRAN (R 4.2.0)
+ munsell          0.5.0      2018-06-12 [1] CRAN (R 4.2.0)
+ pillar           1.8.1      2022-08-19 [1] CRAN (R 4.2.1)
+ pkgconfig        2.0.3      2019-09-22 [1] CRAN (R 4.2.0)
+ png              0.1-7      2013-12-03 [1] CRAN (R 4.2.0)
+ posterior        1.3.1      2022-09-06 [1] CRAN (R 4.2.2)
+ processx         3.8.0      2022-10-26 [1] CRAN (R 4.2.2)
+ ps               1.7.2      2022-10-26 [1] CRAN (R 4.2.2)
+ purrr            0.3.5      2022-10-06 [1] CRAN (R 4.2.2)
+ qs               0.25.4     2022-08-09 [1] CRAN (R 4.2.2)
+ R6               2.5.1      2021-08-19 [1] CRAN (R 4.2.0)
+ RApiSerialize    0.1.2      2022-08-25 [1] CRAN (R 4.2.2)
+ Rcpp             1.0.9      2022-07-08 [1] CRAN (R 4.2.1)
+ RcppParallel     5.1.5      2022-01-05 [1] CRAN (R 4.2.0)
+ rlang            1.0.6      2022-09-24 [1] CRAN (R 4.2.2)
+ rmarkdown        2.18       2022-11-09 [1] CRAN (R 4.2.2)
+ rprojroot        2.0.3      2022-04-02 [1] CRAN (R 4.2.0)
+ rstudioapi       0.13       2020-11-12 [1] CRAN (R 4.2.0)
+ scales           1.2.1      2022-08-20 [1] CRAN (R 4.2.2)
+ sessioninfo      1.2.2      2021-12-06 [1] CRAN (R 4.2.0)
+ stantargets    * 0.0.6.9000 2022-11-24 [1] Github (ropensci/stantargets@e079fc6)
+ stringfish       0.15.7     2022-04-13 [1] CRAN (R 4.2.0)
+ stringi          1.7.8      2022-07-11 [1] CRAN (R 4.2.1)
+ stringr          1.4.1      2022-08-20 [1] CRAN (R 4.2.2)
+ tarchetypes      0.7.2      2022-10-31 [1] CRAN (R 4.2.2)
+ targets        * 0.14.0     2022-11-01 [1] CRAN (R 4.2.2)
+ tensorA          0.36.2     2020-11-19 [1] CRAN (R 4.2.0)
+ tibble           3.1.8      2022-07-22 [1] CRAN (R 4.2.1)
+ tidyselect       1.2.0      2022-10-10 [1] CRAN (R 4.2.2)
+ utf8             1.2.2      2021-07-24 [1] CRAN (R 4.2.0)
+ vctrs            0.5.1      2022-11-16 [1] CRAN (R 4.2.2)
+ withr            2.5.0      2022-03-03 [1] CRAN (R 4.2.0)
+ xfun             0.35       2022-11-16 [1] CRAN (R 4.2.2)
+ xml2             1.3.3      2021-11-30 [1] CRAN (R 4.2.0)
+ yaml             2.3.6      2022-10-18 [1] CRAN (R 4.2.2)
 
  [1] /home/dm0737pe/R/x86_64-pc-linux-gnu-library/4.2
  [2] /usr/local/lib/R/site-library

@@ -429,6 +429,9 @@
 <ul>
 <li>Quantile based prior and likelihood.</li>
 </ul></li>
+<li>Multivariate QPDs</li>
+<li>Posterior passing<br>
+</li>
 <li>Quantile-based quantile-parameterized likelihood.
 <ul>
 <li>Chronic bitter chocolate consumption example.</li>
@@ -605,6 +608,88 @@ u \overset{\mu}{\backsim} Myerson(\psi)\\
 <p>where <span class="math inline">\([q(u\vert\psi)]^{-1}\)</span> is the (prior) DQF of Myerson distribution and <span class="math inline">\(\lvert q_\mu(u|\psi)\rvert\)</span> is the Jacobian adjustment.</p>
 <p>Density-defined and quantile-based priors lead to the same posterior beliefs.</p>
 </section>
+<section id="multivariate-qpds" class="slide level2">
+<h2>Multivariate QPDs</h2>
+<p>Using multivariate distribution (normal, logistic, etc), especially if the base QF of the QPD is coninciding with the marginal QF of the multivariate distribution. The <span class="math inline">\(i\)</span>-th component of a single observation <span class="math inline">\(y_i\)</span> can be described by the QF</p>
+<p><span class="math display">\[
+y_i=Q(z(u_i)\vert\theta_i), \; \text{for }i=1,\dots,J
+\]</span></p>
+<p><span class="citation" data-cites="drovandi2011LikelihoodfreeBayesianEstimation">Drovandi and Pettitt (<a href="#/references" role="doc-biblioref" onclick="">2011</a>)</span> show that the joint density of a single (multivariate) observation <span class="math inline">\((y_i,\dots,y_J)\)</span> can be written as</p>
+<p><span class="math display">\[
+f(y_1,\dots,y_J|\theta)=\varphi(z(Q^{-1}(y_1\vert\theta_1)),\dots,z(Q^{-1}(y_J\vert\theta_J));\Sigma)\prod_{i=1}^{J}\frac{dQ^{-1}(y_i\vert\theta_i)}{dy_i}
+\]</span></p>
+<p>where <span class="math inline">\(z(Q^{-1}(y_i\vert\theta_i))=z_i\)</span> and <span class="math inline">\(\varphi(z_1,\dots,z_J;\Sigma)\)</span> is the MVN PDF and <span class="math inline">\(\frac{dQ^{-1}(y_i)}{dy_i}=f(y_i)\)</span> is the PDF of the QPD. Quantile-based joint density</p>
+<p><span class="math display">\[
+[q(u_1,\dots,u_j\vert \theta)]^{-1}=\varphi(z(u_1),\dots,z(u_J);\Sigma)\prod_{i=1}^{J}[q(u_i\vert\theta_i)]^{-1}
+\]</span></p>
+</section>
+<section id="mutivariate-qpds" class="slide level2">
+<h2>Mutivariate QPDs</h2>
+
+<img data-src="biwqpd-slides_files/figure-revealjs/fig-bi-myerson-1.png" style="width:80.0%" class="r-stretch quarto-figure-center"><p class="caption">Figure 1: Samples from the Bivariate Myerson distributions joined by the multivariate normal MVN(0,0.6)</p></section>
+<section id="source-of-prior-knowledge" class="slide level2">
+<h2>Source of prior knowledge</h2>
+<p>The prior distribution should reflect the expert’s knowledge (or ignorance) about the parameter of interest coming from:</p>
+<ul>
+<li><em>Statistical Expression of Ignorance</em>, commonly encoded into the <em>non-informative</em>, default, diffuse, and weakly informative priors <span class="citation" data-cites="banner2020UseBayesianPriors gelman2017SubjectiveObjectiveStatistics">(<a href="#/references" role="doc-biblioref" onclick="">Banner, Irvine, and Rodhouse 2020</a>; <a href="#/references" role="doc-biblioref" onclick="">Gelman and Hennig 2017</a>)</span>, also known as <em>objective</em> Bayesian analysis.</li>
+<li><em>Structured Expert Judgment</em> (SEJ), encoding of expert knowledge into the <em>informative</em> priors <span class="citation" data-cites="ohagan2006UncertainJudgementsEliciting mikkola2021PriorKnowledgeElicitation">(<a href="#/references" role="doc-biblioref" onclick="">O’Hagan et al. 2006</a>; <a href="#/references" role="doc-biblioref" onclick="">Mikkola et al. 2021</a>)</span> by fitting statistical distributions to the judgments elicited from an expert <span class="citation" data-cites="ohagan2019ExpertKnowledgeElicitation morgan2014UseAbuseExpert">(<a href="#/references" role="doc-biblioref" onclick="">O’Hagan 2019</a>; <a href="#/references" role="doc-biblioref" onclick="">Morgan 2014</a>)</span>, or aggregation of judgments of multiple experts <span class="citation" data-cites="hanea2021ExpertJudgementRisk">(<a href="#/references" role="doc-biblioref" onclick="">Hanea et al. 2021</a>)</span> reflecting the state of knowledge before observing the data.</li>
+<li><em>Posterior passing</em> (PP), related to transforming the posterior parameter samples into the prior distribution for the subsequent updating with new evidence <span class="citation" data-cites="beppu2009IteratedLearningCultural brand2019CumulativeScienceBayesian pritsker2021ComparingBayesianPosterior">(<a href="#/references" role="doc-biblioref" onclick="">Beppu and Griffiths 2009</a>; <a href="#/references" role="doc-biblioref" onclick="">Brand et al. 2019</a>; <a href="#/references" role="doc-biblioref" onclick="">Pritsker 2021</a>)</span>, which acts as a <em>hyper-informative</em> prior matching the previously obtained knowledge as closely as possible.</li>
+</ul>
+</section>
+<section id="posterior-passing" class="slide level2">
+<h2>Posterior passing</h2>
+<p>Posterior sample quantiles can be approximated with a QPD and joined with copula. The approximating QPD should be highly flexible and, ideally, easy to fit.</p>
+<p>Alternatives:</p>
+<ul>
+<li>Flexible quantile distribution
+<ul>
+<li>Pros: wide selection of shapes, convenient parameterization, which simplifies fitting</li>
+<li>Cons: fixed number of terms, non-linear optimization (or distributional least squares) to fit</li>
+</ul></li>
+<li>Metalog distribution
+<ul>
+<li>Pros: any choice of boundedness, high flexibility (in pracice up to ~16 terms), linear fitting</li>
+<li>Cons: feasibility</li>
+</ul></li>
+<li>Monopoly-Myerson (-Metalog/-JQPD) approximation
+<ul>
+<li>Pros: unlimited flexibility, guaranteed feasibility, choice of tails</li>
+<li>Cons: non-linear fitting</li>
+</ul></li>
+</ul>
+<p>Monopoly-Myerson approximation is based on monotone polynomials of <span class="citation" data-cites="murray2016FastFlexibleMethods">Murray, Müller, and Turlach (<a href="#/references" role="doc-biblioref" onclick="">2016</a>)</span> complemented by tails from an SPT-parameterized QPD</p>
+</section>
+<section id="monopoly-myerson-approximation" class="slide level2">
+<h2>Monopoly-Myerson approximation</h2>
+<p>Map all posterior samples to cumulative probabilities <span class="math inline">\(v\in(\varsigma,1-\varsigma)\)</span> using Method 5 in <span class="citation" data-cites="hyndman1996SampleQuantilesStatistical">Hyndman and Fan (<a href="#/references" role="doc-biblioref" onclick="">1996</a>)</span>.</p>
+<p>The quantile values corresponding to probabilities outside of <span class="math inline">\([\varsigma,1-\varsigma]\)</span> can be modeled by an SPT-parameterized QPD. such as the Myerson distribution (or one of its modification) with parameters <span class="math inline">\([p_s(\varsigma), p_s(0.5), p_s(1-\varsigma)]\)</span>, the lowest, the median and the highest sample quantile approximated by the polynomial and the tail parameter <span class="math inline">\(\varsigma\)</span>. Therefore the approximating Monopoly-Myerson quantile function becomes</p>
+<p><span class="math display">\[
+\begin{gathered}
+Q(u)=\begin{cases}
+p_s(u\vert\beta),\quad \text{if }\varsigma \leq u \leq 1-\varsigma\\
+M(u\vert\theta), \quad \text{otherwise}
+\end{cases}
+\end{gathered}
+\]</span></p>
+<p>where <span class="math inline">\(p_s(u\vert\beta)\)</span> is the monotone polynomial of order <span class="math inline">\(s\)</span> <span class="citation" data-cites="murray2016FastFlexibleMethods turlach2019MonoPolyFunctionsFit">(<a href="#/references" role="doc-biblioref" onclick="">Murray, Müller, and Turlach 2016</a>; <a href="#/references" role="doc-biblioref" onclick="">Turlach and Murray 2019</a>)</span> and <span class="math inline">\(M(u\vert\theta)\)</span> is the (Logit-)Myerson distribution with parameters <span class="math inline">\(\theta={p_s(\varsigma), p_s(0.5), p_s(1-\varsigma), \varsigma}\)</span>.</p>
+</section>
+<section id="posterior" class="slide level2">
+<h2>Posterior</h2>
+<p>MtX capture-recapture model from (BPA) <span class="citation" data-cites="kery2012BayesianPopulationAnalysis">Kéry and Schaub (<a href="#/references" role="doc-biblioref" onclick="">2012</a>)</span>, Chapter 6<a href="#/footnotes" class="footnote-ref" id="fnref4" role="doc-noteref" data-footnote-href="#/fn4" onclick=""><sup>4</sup></a></p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img data-src="biwqpd-slides_files/figure-revealjs/params-combo-plot-1.png" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<aside></aside></section>
+<section id="passed" class="slide level2">
+<h2>Passed</h2>
+
+<img data-src="biwqpd-slides_files/figure-revealjs/monopoly-myerson-approx-plot-1.png" style="width:80.0%" class="r-stretch quarto-figure-center"></section>
 <section id="quantile-parameterized-likelihood" class="slide level2">
 <h2>Quantile-parameterized likelihood</h2>
 <p>In order to enable learning, the <span class="math inline">\(\{q,p\}\)</span> pairs (QPPs) need to be allowed to vary. Any new set of drawn “QPP parameters” need to remain a valid QPT (e.g.&nbsp;no overlaps).</p>
@@ -982,20 +1067,41 @@ u \overset{y}{\backsim} Q_Y(\alpha,\beta, \theta; \underline{x})\\
 <p><a href="https://bit.ly/biwqpd-slides" class="uri">https://bit.ly/biwqpd-slides</a></p>
 </div>
 <div id="refs" class="references csl-bib-body hanging-indent" role="doc-bibliography">
+<div id="ref-banner2020UseBayesianPriors" class="csl-entry" role="doc-biblioentry">
+Banner, Katharine M., Kathryn M. Irvine, and Thomas J. Rodhouse. 2020. <span>“The Use of Bayesian Priors in Ecology: The Good, the Bad and the Not Great.”</span> <em>Methods in Ecology and Evolution</em> 11 (8): 882–89. <a href="https://doi.org/10.1111/2041-210X.13407">https://doi.org/10.1111/2041-210X.13407</a>.
+</div>
+<div id="ref-beppu2009IteratedLearningCultural" class="csl-entry" role="doc-biblioentry">
+Beppu, Aaron, and Thomas Griffiths. 2009. <span>“Iterated Learning and the Cultural Ratchet.”</span> In <em>Proceedings of the Annual Meeting of the Cognitive Science Society</em>. Vol. 31.
+</div>
+<div id="ref-brand2019CumulativeScienceBayesian" class="csl-entry" role="doc-biblioentry">
+Brand, Charlotte Olivia, James Patrick Ounsley, Daniel Job van der Post, and Thomas Joshua Henry Morgan. 2019. <span>“Cumulative Science via Bayesian Posterior Passing: An Introduction.”</span> <em>Meta-Psychology</em> 3 (June). <a href="https://doi.org/10.15626/MP.2017.840">https://doi.org/10.15626/MP.2017.840</a>.
+</div>
 <div id="ref-burkner2020ModellingMonotonicEffects" class="csl-entry" role="doc-biblioentry">
 Bürkner, Paul-Christian, and Emmanuel Charpentier. 2020. <span>“Modelling Monotonic Effects of Ordinal Predictors in Bayesian Regression Models.”</span> <em>British Journal of Mathematical and Statistical Psychology</em> 73 (3): 420–51. <a href="https://doi.org/ggqtkh">https://doi.org/ggqtkh</a>.
+</div>
+<div id="ref-drovandi2011LikelihoodfreeBayesianEstimation" class="csl-entry" role="doc-biblioentry">
+Drovandi, Christopher C., and Anthony N. Pettitt. 2011. <span>“Likelihood-Free Bayesian Estimation of Multivariate Quantile Distributions.”</span> <em>Computational Statistics &amp; Data Analysis</em> 55 (9): 2541–56. <a href="https://doi.org/fdwbxf">https://doi.org/fdwbxf</a>.
 </div>
 <div id="ref-elfadaly2013ElicitingDirichletConnor" class="csl-entry" role="doc-biblioentry">
 Elfadaly, Fadlalla G., and Paul H. Garthwaite. 2013. <span>“Eliciting Dirichlet and Connormosimann Prior Distributions for Multinomial Models.”</span> <em>TEST</em> 22 (4): 628–46. <a href="https://doi.org/10.1007/s11749-013-0336-4">https://doi.org/10.1007/s11749-013-0336-4</a>.
 </div>
+<div id="ref-gelman2017SubjectiveObjectiveStatistics" class="csl-entry" role="doc-biblioentry">
+Gelman, Andrew, and Christian Hennig. 2017. <span>“Beyond Subjective and Objective in Statistics.”</span> <em>Journal of the Royal Statistical Society: Series A (Statistics in Society)</em> 180 (4): 967–1033. <a href="https://doi.org/10.1111/rssa.12276">https://doi.org/10.1111/rssa.12276</a>.
+</div>
 <div id="ref-gilchrist2000StatisticalModellingQuantile" class="csl-entry" role="doc-biblioentry">
 Gilchrist, Warren. 2000. <em>Statistical Modelling with Quantile Functions</em>. Boca Raton: Chapman &amp; Hall/CRC.
+</div>
+<div id="ref-hanea2021ExpertJudgementRisk" class="csl-entry" role="doc-biblioentry">
+Hanea, Anca M., Gabriela F. Nane, Tim Bedford, and Simon French, eds. 2021. <em>Expert Judgement in Risk and Decision Analysis</em>. Vol. 293. International Series in Operations Research &amp; Management Science. Cham: Springer International Publishing. <a href="https://doi.org/10.1007/978-3-030-46474-5">https://doi.org/10.1007/978-3-030-46474-5</a>.
 </div>
 <div id="ref-hartmann2020FlexiblePriorElicitation" class="csl-entry" role="doc-biblioentry">
 Hartmann, Marcelo, Georgi Agiashvili, Paul Bürkner, and Arto Klami. 2020. <span>“Flexible Prior Elicitation via the Prior Predictive Distribution.”</span> <em>arXiv:2002.09868 [Stat]</em>, February. <a href="https://arxiv.org/abs/2002.09868">https://arxiv.org/abs/2002.09868</a>.
 </div>
 <div id="ref-hoffrage2002RepresentationFacilitatesReasoning" class="csl-entry" role="doc-biblioentry">
 Hoffrage, Ulrich, Gerd Gigerenzer, Stefan Krauss, and Laura Martignon. 2002. <span>“Representation Facilitates Reasoning: What Natural Frequencies Are and What They Are Not.”</span> <em>Cognition</em> 84 (3): 343–52. <a href="https://doi.org/fqcg8h">https://doi.org/fqcg8h</a>.
+</div>
+<div id="ref-hyndman1996SampleQuantilesStatistical" class="csl-entry" role="doc-biblioentry">
+Hyndman, Rob J., and Yanan Fan. 1996. <span>“Sample Quantiles in Statistical Packages.”</span> <em>The American Statistician</em> 50 (4): 361–65. <a href="https://doi.org/10.2307/2684934">https://doi.org/10.2307/2684934</a>.
 </div>
 <div id="ref-keelin2016MetalogDistributions" class="csl-entry" role="doc-biblioentry">
 Keelin, Thomas W. 2016. <span>“The Metalog Distributions.”</span> <em>Decision Analysis</em> 13 (4): 243–77. <a href="https://doi.org/f9n7nt">https://doi.org/f9n7nt</a>.
@@ -1006,14 +1112,29 @@ Keelin, Thomas W. 2016. <span>“The Metalog Distributions.”</span> <em>Decisi
 <div id="ref-keelin2011QuantileParameterizedDistributions" class="csl-entry" role="doc-biblioentry">
 Keelin, Thomas W., and Bradford W. Powley. 2011. <span>“Quantile-Parameterized Distributions.”</span> <em>Decision Analysis</em> 8 (3): 206–19. <a href="https://doi.org/10.1287/deca.1110.0213">https://doi.org/10.1287/deca.1110.0213</a>.
 </div>
+<div id="ref-kery2012BayesianPopulationAnalysis" class="csl-entry" role="doc-biblioentry">
+Kéry, Marc, and Michael Schaub. 2012. <em>Bayesian Population Analysis Using WinBUGS: A Hierarchical Perspective</em>. 1st ed. Boston: Academic Press.
+</div>
+<div id="ref-mikkola2021PriorKnowledgeElicitation" class="csl-entry" role="doc-biblioentry">
+Mikkola, Petrus, Osvaldo A. Martin, Suyog Chandramouli, Marcelo Hartmann, Oriol Abril Pla, Owen Thomas, Henri Pesonen, et al. 2021. <span>“Prior Knowledge Elicitation: The Past, Present, and Future.”</span> <em>arXiv:2112.01380 [Stat]</em>, December. <a href="https://arxiv.org/abs/2112.01380">https://arxiv.org/abs/2112.01380</a>.
+</div>
+<div id="ref-morgan2014UseAbuseExpert" class="csl-entry" role="doc-biblioentry">
+Morgan, M. Granger. 2014. <span>“Use (and Abuse) of Expert Elicitation in Support of Decision Making for Public Policy.”</span> <em>Proceedings of the National Academy of Sciences</em> 111 (20): 7176–84. <a href="https://doi.org/f53vcd">https://doi.org/f53vcd</a>.
+</div>
 <div id="ref-mosteller2013BeginningStatisticsData" class="csl-entry" role="doc-biblioentry">
 Mosteller, Frederick, Stephen E. Fienberg, and Robert E. K. Rourke. 2013. <em>Beginning Statistics with Data Analysis</em>. Mineola, New York: Dover Publications, Inc.
+</div>
+<div id="ref-murray2016FastFlexibleMethods" class="csl-entry" role="doc-biblioentry">
+Murray, K., S. Müller, and B. A. Turlach. 2016. <span>“Fast and Flexible Methods for Monotone Polynomial Fitting.”</span> <em>Journal of Statistical Computation and Simulation</em> 86 (15): 2946–66. <a href="https://doi.org/gnhmgd">https://doi.org/gnhmgd</a>.
 </div>
 <div id="ref-myerson2005ProbabilityModelsEconomic" class="csl-entry" role="doc-biblioentry">
 Myerson, Roger B. 2005. <em>Probability Models for Economic Decisions</em>. Duxbury Applied Series. Belmont, CA: Thomson/Brooke/Cole.
 </div>
 <div id="ref-nair2020BayesianInferenceQuantile" class="csl-entry" role="doc-biblioentry">
 Nair, N. Unnikrishnan, P. G. Sankaran, and M. Dileepkumar. 2020. <span>“Bayesian Inference in Quantile Functions.”</span> <em>Communications in Statistics - Theory and Methods</em> 0 (0): 1–13. <a href="https://doi.org/ghkdr4">https://doi.org/ghkdr4</a>.
+</div>
+<div id="ref-ohagan2019ExpertKnowledgeElicitation" class="csl-entry" role="doc-biblioentry">
+O’Hagan, Anthony. 2019. <span>“Expert Knowledge Elicitation: Subjective but Scientific.”</span> <em>The American Statistician</em> 73 (sup1): 69–81. <a href="https://doi.org/gf4jz2">https://doi.org/gf4jz2</a>.
 </div>
 <div id="ref-ohagan2006UncertainJudgementsEliciting" class="csl-entry" role="doc-biblioentry">
 O’Hagan, Anthony, Caitlin E. Buck, Alireza Daneshkhah, J. Richard Eiser, Paul H. Garthwaite, David J. Jenkinson, Jeremy E. Oakley, and Tim Rakow. 2006. <em>Uncertain Judgements: Eliciting Experts’ Probabilities: O’hagan/Uncertain Judgements: Eliciting Experts’ Probabilities</em>. Chichester, UK: John Wiley &amp; Sons, Ltd. <a href="https://doi.org/10.1002/0470033312">https://doi.org/10.1002/0470033312</a>.
@@ -1027,11 +1148,17 @@ Perepolkin, Dmytro, Benjamin Goodrich, and Ullrika Sahlin. 2021a. <span>“Hybri
 <div id="ref-perepolkin2021TenetsQuantilebasedInference" class="csl-entry" role="doc-biblioentry">
 ———. 2021b. <span>“The Tenets of Quantile-Based Inference in Bayesian Models.”</span> Preprint. https://osf.io/enzgs: Open Science Framework. <a href="https://doi.org/10.31219/osf.io/enzgs">https://doi.org/10.31219/osf.io/enzgs</a>.
 </div>
+<div id="ref-pritsker2021ComparingBayesianPosterior" class="csl-entry" role="doc-biblioentry">
+Pritsker, Joshua. 2021. <span>“Comparing Bayesian Posterior Passing with Meta-Analysis.”</span> <em>Meta-Psychology</em> 5 (November). <a href="https://doi.org/10.15626/MP.2020.2539">https://doi.org/10.15626/MP.2020.2539</a>.
+</div>
 <div id="ref-sahlin1990PhilosophyFPRamsey" class="csl-entry" role="doc-biblioentry">
 Sahlin, Nils-Eric. 1990. <em>The Philosophy of FP Ramsey</em>. Cambridge University Press.
 </div>
 <div id="ref-tukey1965WhichPartSample" class="csl-entry" role="doc-biblioentry">
 Tukey, John W. 1965. <span>“Which Part of the Sample Contains the Information?”</span> <em>Proceedings of the National Academy of Sciences</em> 53 (1): 127–34. <a href="https://doi.org/dkvgcq">https://doi.org/dkvgcq</a>.
+</div>
+<div id="ref-turlach2019MonoPolyFunctionsFit" class="csl-entry" role="doc-biblioentry">
+Turlach, B. A., and K. Murray. 2019. <em>MonoPoly: Functions to Fit Monotone Polynomials</em>. Manual.
 </div>
 </div>
 </section>
@@ -1041,6 +1168,7 @@ Tukey, John W. 1965. <span>“Which Part of the Sample Contains the Information?
 <li id="fn1"><p>For Bayesians, probabilities represent the state of knowledge</p></li>
 <li id="fn2"><p>Potentially</p></li>
 <li id="fn3"><p>Includes semi-bounded (LogMetalog) and bounded (LogitMetalog)</p></li>
+<li id="fn4"><p>Stan Example Models</p></li>
 </ol>
 </section>
     </div>

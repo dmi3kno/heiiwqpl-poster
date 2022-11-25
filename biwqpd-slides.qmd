@@ -19,6 +19,7 @@ format:
     footer: "<https://bit.ly/biwqpd-slides>"
     reference-location: document
 from: markdown+emoji
+self-contained-math: true
 bibliography: "`r rbbt::bbt_write_bib('biwqpd-slides.bib', translator='bibtex', overwrite = TRUE)`"
 resources:
   - biwqpd-slides.pdf
@@ -33,6 +34,11 @@ library(qpd)
 library(tidyverse)
 library(targets)
 library(patchwork)
+library(ggExtra)
+library(MonoPoly)
+library(posterior)
+library(bayesplot)
+
 ```
 
 
@@ -42,6 +48,8 @@ We will touch on some of the following:
 -   Smooth beliefs. QPD priors.
 -   Quantile-based inference
     -   Quantile based prior and likelihood.
+-   Multivariate QPDs
+-   Posterior passing    
 -   Quantile-based quantile-parameterized likelihood.
     -   Chronic bitter chocolate consumption example.
 -   Parametric quantile regression (interlude).
@@ -362,6 +370,156 @@ $$
 where $[q(u\vert\psi)]^{-1}$ is the (prior) DQF of Myerson distribution and $\lvert q_\mu(u|\psi)\rvert$ is the Jacobian adjustment.
 
 Density-defined and quantile-based priors lead to the same posterior beliefs.
+
+## Multivariate QPDs
+
+Using multivariate distribution (normal, logistic, etc), especially if the base QF of the QPD is coninciding with the marginal QF of the multivariate distribution. The $i$-th component of a single observation $y_i$ can be described by the QF
+
+$$
+y_i=Q(z(u_i)\vert\theta_i), \; \text{for }i=1,\dots,J 
+$$
+@drovandi2011LikelihoodfreeBayesianEstimation show that the joint density of a single (multivariate) observation $(y_i,\dots,y_J)$ can be written as 
+
+$$
+f(y_1,\dots,y_J|\theta)=\varphi(z(Q^{-1}(y_1\vert\theta_1)),\dots,z(Q^{-1}(y_J\vert\theta_J));\Sigma)\prod_{i=1}^{J}\frac{dQ^{-1}(y_i\vert\theta_i)}{dy_i}
+$$
+
+where $z(Q^{-1}(y_i\vert\theta_i))=z_i$ and $\varphi(z_1,\dots,z_J;\Sigma)$ is the MVN PDF and $\frac{dQ^{-1}(y_i)}{dy_i}=f(y_i)$ is the PDF of the QPD. Quantile-based joint density
+
+$$
+[q(u_1,\dots,u_j\vert \theta)]^{-1}=\varphi(z(u_1),\dots,z(u_J);\Sigma)\prod_{i=1}^{J}[q(u_i\vert\theta_i)]^{-1}
+$$
+
+## Mutivariate QPDs
+
+```{r fig-bi-myerson, echo=FALSE, out.width="80%", fig.cap="Samples from the Bivariate Myerson distributions joined by the multivariate normal MVN(0,0.6)", fig.align='center', warning=FALSE}
+library(mvtnorm)
+set.seed(42)
+ N <- 1e4
+# variances on diagonal and covariances off diagonal
+rho <- 0.6
+sg <- toeplitz(c(1,rho))
+smpls_u <- mvtnorm::rmvnorm(N, sigma = sg) %>% pnorm()
+
+myerson_df <- tibble(
+x1 = qMyerson(smpls_u[,1], 3, 7, 10, alpha = 0.25),
+x2 = qMyerson(smpls_u[,2], 1, 10, 20, alpha=0.1)
+)
+
+myerson_kde <- MASS::kde2d(myerson_df$x1, myerson_df$x2, n = 100) 
+
+p1 <- ggplot(myerson_df,aes(x1,x2))+
+  geom_point(alpha=0.1)+
+  geom_density2d()+
+  geom_vline(xintercept = c(3,8,10), color="grey20", linetype=2)+
+  geom_hline(yintercept = c(1,10,20), color="grey20", linetype=2)+
+  hrbrthemes::theme_ipsum_rc(grid=FALSE)+
+  labs(x="x ~ Myerson(3,8,10; 0.25)",
+       y="y ~ Myerson(1,10,20; 0.10)")
+
+ggMarginal(p1, type="densigram", color="royalblue", fill="grey20")
+
+```
+
+## Source of prior knowledge
+
+The prior distribution should reflect the expert's knowledge (or ignorance) about the parameter of interest coming from: 
+
+- *Statistical Expression of Ignorance*, commonly encoded into the *non-informative*, default, diffuse, and weakly informative priors [@banner2020UseBayesianPriors; @gelman2017SubjectiveObjectiveStatistics], also known as *objective* Bayesian analysis.
+- *Structured Expert Judgment* (SEJ), encoding of expert knowledge into the *informative* priors [@ohagan2006UncertainJudgementsEliciting; @mikkola2021PriorKnowledgeElicitation] by fitting statistical distributions to the judgments elicited from an expert [@ohagan2019ExpertKnowledgeElicitation; @morgan2014UseAbuseExpert], or aggregation of judgments of multiple experts [@hanea2021ExpertJudgementRisk] reflecting the state of knowledge before observing the data.
+- *Posterior passing* (PP), related to transforming the posterior parameter samples into the prior distribution for the subsequent updating with new evidence [@beppu2009IteratedLearningCultural; @brand2019CumulativeScienceBayesian; @pritsker2021ComparingBayesianPosterior], which acts as a *hyper-informative* prior matching the previously obtained knowledge as closely as possible.
+
+## Posterior passing
+
+Posterior sample quantiles can be approximated with a QPD and joined with copula. The approximating QPD should be highly flexible and, ideally, easy to fit.
+
+Alternatives:
+
+- Flexible quantile distribution
+  - Pros: wide selection of shapes, convenient parameterization, which simplifies fitting
+  - Cons: fixed number of terms, non-linear optimization (or distributional least squares) to fit
+- Metalog distribution
+  - Pros: any choice of boundedness, high flexibility (in pracice up to ~16 terms), linear fitting
+  - Cons: feasibility
+- Monopoly-Myerson (-Metalog/-JQPD) approximation
+  - Pros: unlimited flexibility, guaranteed feasibility, choice of tails
+  - Cons: non-linear fitting
+
+Monopoly-Myerson approximation is based on monotone polynomials of @murray2016FastFlexibleMethods complemented by tails from an SPT-parameterized QPD
+
+## Monopoly-Myerson approximation
+
+Map all posterior samples to cumulative probabilities $v\in(\varsigma,1-\varsigma)$ using Method 5 in @hyndman1996SampleQuantilesStatistical.
+
+The quantile values corresponding to probabilities outside of $[\varsigma,1-\varsigma]$ can be modeled by an SPT-parameterized QPD. such as the Myerson distribution (or one of its modification) with parameters $[p_s(\varsigma), p_s(0.5), p_s(1-\varsigma)]$, the lowest, the median and the highest sample quantile approximated by the polynomial and the tail parameter $\varsigma$. Therefore the approximating Monopoly-Myerson quantile function becomes
+
+$$
+\begin{gathered}
+Q(u)=\begin{cases}
+p_s(u\vert\beta),\quad \text{if }\varsigma \leq u \leq 1-\varsigma\\
+M(u\vert\theta), \quad \text{otherwise}
+\end{cases}
+\end{gathered}
+$$
+where $p_s(u\vert\beta)$ is the monotone polynomial of order $s$ [@murray2016FastFlexibleMethods; @turlach2019MonoPolyFunctionsFit] and $M(u\vert\theta)$ is the (Logit-)Myerson distribution with parameters $\theta={p_s(\varsigma), p_s(0.5), p_s(1-\varsigma), \varsigma}$.
+
+## Posterior
+
+MtX capture-recapture model from (BPA) @kery2012BayesianPopulationAnalysis, Chapter 6^[Stan Example Models] 
+
+```{r params-combo-plot, fig.width=7, fig.height=5, fig.align='center'}
+fit_MtX <- tar_read(mod_mtx_mcmc_MtX)
+draw_MtX <- fit_MtX %>% 
+  posterior::as_draws_array() %>% 
+    posterior::subset_draws(variable=c("omega", "beta", "mu_size", "sd_size"), regex=TRUE)
+
+draw_MtX %>% 
+  bayesplot::mcmc_combo()
+```
+
+## Passed
+
+
+```{r monopoly-myerson-approx-plot, fig.width=7, fig.height=5, out.width="80%", fig.align='center', warning=FALSE}
+#"alpha[1]"    "alpha[2]"   "alpha[3]"   "alpha[4]"  "alpha[5]" 
+# "omega"         
+# "mean_p[1]"  "mean_p[2]"  "mean_p[3]"      "mean_p[4]"      "mean_p[5]"   
+# "beta" #unbounded
+# "mu_size"  #unbounded    
+# "sd_size"
+par_name <- "beta"
+par_beta <- draw_MtX %>% extract_variable(par_name)
+par_beta_df <- par_beta %>% qpd::make_ecdf_df() 
+
+par_beta_mp <- MonoPoly::monpol(q~p, data=par_beta_df, degree = 16, a=0, b=1)
+
+sg <- min(par_beta_df$p)
+
+mrs <- predict(par_beta_mp, newdata = data.frame(p=c(sg, 0.5, 1-sg)))
+
+par_betapred_df <-tibble::tibble( 
+  p_grd = qpd::make_pgrid(150, s=3),
+  section=cut(p_grd, breaks=c(0, sg, 1-sg,1),labels = FALSE, include.lowest = TRUE),
+  pred_q=ifelse(section==2, 
+                as.vector(predict(par_beta_mp, newdata = data.frame(p=p_grd))),
+                qlogitMyerson(p_grd, mrs[1], mrs[2], mrs[3], alpha=sg))
+                )
+
+n <- length(par_beta)
+
+
+
+par_beta_df %>% 
+  ggplot(aes(p,q))+geom_point(alpha=0.1)+
+  geom_line(data=par_betapred_df, aes(p_grd, pred_q, color=factor(section)), 
+            show.legend = FALSE)+
+  hrbrthemes::theme_ipsum_rc(grid=FALSE)+
+  labs(title="Monopoly-Myerson approximation of posterior samples",
+       subtitle=glue::glue("Parameter: {par_name}"))
+
+```
+
+
 
 ## Quantile-parameterized likelihood
 
