@@ -25,6 +25,8 @@ resources:
   - biwqpd-slides.pdf
 ---
 
+# Introduction
+
 ## Roadmap
 
 ```{r setup}
@@ -92,6 +94,8 @@ Elicit QPPs and fit a "known" distribution
 - $X\in [0,1]$? Use Beta! 
 - Or Kumaraswamy? $Q(u|a,b)=(1-(1-u)^{\frac{1}{b}})^{\frac{1}{a}}$
 :::
+
+# Quantile-parameterized distributions
 
 ## Smooth beliefs
 
@@ -519,7 +523,7 @@ par_beta_df %>%
 
 ```
 
-
+# Bayesian inference with quantile functions
 
 ## Quantile-parameterized likelihood
 
@@ -983,6 +987,86 @@ tar_read(fld_ppc_draws) %>%
     x="Stopping distance(d)", y="Speed(s)")
 ```
 
+# Inverting the quantile functions
 
+## Bracketing vs derivative-based algorithms
+
+Inverting a quantile function at the point $y$ is tantamount to finding the root of the target function
+
+$$
+ \Omega(u;y,\theta)=y-Q_Y(u \vert \theta)
+$$ 
+
+where $y$ is a known observation, $\theta$ is the parameter value, and $u$ is the depth, corresponding to the observation $y$. Provided that the $Q_Y(u \vert \theta)$ is a non-decreasing function and $y$ is a fixed observable value, the target function $\Omega(u;y,\theta)$ with the range $u \in [0,1]$ is non-increasing. 
+
+- The *bracketing* root-finding algorithms, e.g. *bisection* or *Brent* [@atkinson2008IntroductionNumericalAnalysis; @burden2011NumericalAnalysis] require the interval $[a,b]$ containing the root. Bracketing root-finding algorithms guarantee the convergence, although they can be slow.
+- The *non-bracketing* root-finding algorithms, e.g. *Newton-Raphson*, *Halley*, etc [@householder1970NumericalTreatmentSingle], rely on computing the derivatives^[The first derivative of the target function is simply the negative QDF $\Omega^\prime(u;y,\theta)=\frac{d[y-Q_Y(u \vert \theta)]}{du}=-q_Y(u \vert \theta)$.] of the target function $\Omega$. Unfortunately, the derivative-based algorithms do not guarantee that the root will be found and may end up in infinite loops and divergences. 
+
+Modern root-finding algorithms such as TOMS748 [@alefeld1995Algorithm748Enclosing], Chandrupatla [@chandrupatla1997NewHybridQuadratica], NewtSafe [@acton1990NumericalMethodsThat; @press2007NumericalRecipesArt], Ridders' [@ridders1979NewAlgorithmComputing] and Zhang [@zhang2011ImprovementBrentMethod; @stage2013CommentsImprovementBrent], combine advantages of bracketing and non-bracketing methods to ensure robust and efficient convergence. 
+
+## Existing and proposed root-finders in Stan
+
+The existing root-finders in Stan are all *derivative-based*, wrapping SUNDIALS implementation of Powell hybrid method and Newton method. 
+
+1) The *interface* is primarily aimed towards solving systems of equations, but can be re-purposed for univariate root-finding (slightly awkward but doable).
+2) Roots are not constrained. The derivative is calculated automatically (wrong?) and new `u_guess` often lands outside of $[0,1]$ bounds. Rejecting the proposed parameters based on the incorrect iteration of `u_guess` is causing problems with HMC.
+3) The `f_tol` argument is behaving really strange and should be reconsidered for the purpose of finding depths $u$ for the values of $y$.
+
+There is a proposal to wrap [*Halley* root-finder from Boost](https://github.com/stan-dev/math/pull/2720). Halley algorithm requires two derivatives (i.e. QDF and QCF).
+
+1) The proposed wrapping will be tailored specifically for inverting QFs (and CDFs?). 
+2) The [Boost implementation of derivative-based methods](https://www.boost.org/doc/libs/1_79_0/libs/math/doc/html/math_toolkit/roots_deriv.html) has `min` and `max` arguments and includes bisection iteration in case proposed `u_guess` ends up outside of the bounds. For "well-behaved" (monotonic single root) functions specification of bounds may be enough (i.e. instead of specifying the initial guess "very close to the root", the initial proposal may be found by simple bisection).
+
+
+## Existing and proposed root-finders in Stan
+
+Relevant quotes from [the documentation](https://www.boost.org/doc/libs/1_79_0/libs/math/doc/html/math_toolkit/roots_deriv.html) (italics is mine):
+
+- "Flat spots" in quantile function (zero derivative)
+
+>  These functions include special cases to handle zero first (and second where appropriate) derivatives, and fall back to bisect in this case. However, it is helpful if functor F is defined to *return an arbitrarily small value of the correct sign rather than zero*. 
+
+- Tails of QDF (QDF is u-shaped)
+
+>  If the derivative at the current best guess for the result is infinite (or very close to being infinite) then these functions may terminate prematurely. A *large first derivative leads to a very small next step, triggering the termination condition*. Derivative based iteration may not be appropriate in such cases. 
+
+- Target function $\Omega$ is (hopefully) well-behaved
+
+>  If the function is 'Really Well Behaved' (is monotonic and has only one root) the bracket bounds min and max may as well be set to the widest limits like zero and numeric_limits<T>::max(). 
+
+## The case for the bracketing rootfinder in Stan
+
+When *inverting the QF* the root is naturally bracketed by $[0,1]$, however the value of QF at 0 and 1 depth might *not be finite*.
+
+When *inverting the CDF* there's no natural bracket to wrap the root by. The [Bracket and Solve](https://www.boost.org/doc/libs/1_81_0/libs/math/doc/html/math_toolkit/roots_noderiv/bracket_solve.html) procedure in Boost does iterative root bracketing and then invokes TOMS748 on the identified bracket.
+
+The reasons we need the bracketing rootfinder:
+
+1) Computing QF with an **invalid depth** `u` (outside $[0,1]$), even as intermediate values inside the Newton iteration, might lead to invalid rejection of parameter proposal. *Rootfinder should never go outside of the parameter bounds*. Otherwise `NaN` returned by QF will carry through Newton iteration, unless the probability is "reset" inside the target function [@nair2020BayesianInferenceQuantile]. Manual resetting of `u_guess` inside target function should be avoided (due to potential divergences).
+2) Finding **good `u_guess`** values is not a trivial task, especially in case of (parametric quantile) regression. Grid matching is expensive (unfeasible in the presence of covariates). Importance of informative `u_guess` should be tested on more complex QFs (regression, Metalog, g-and-k, GLD).
+
+Concerns and workarounds the bracketing rootfinder:
+
+1) For bracketing rootfinder it is important to assure that the target function is of opposite sign around the root. In most extreme case, it means +/- Inf. But! Even checking if target function is infinite at 0 and 1 (`is_inf()`) affects the energy of the sampler (can not get started). Custom values (good defaults?) supplied `fa` and `fb` arguments might be useful to avoid the problems with the sampler. Needs to be checked!
+2) The [Bracket and solve root](https://www.boost.org/doc/libs/1_81_0/libs/math/doc/html/math_toolkit/roots_noderiv/bracket_solve.html) function of Boost might be more useful for ICDF. Could it be less expensive than finding a good `x_guess` (note the `factor` argument)?
+
+## Validation of quantile functions
+
+An invalid QF will manifest itself as:
+
+- negative first derivative (QDF), in case of *derivative-based* rootfiding
+- multiple roots, in case of *bracketing* rootfinding
+
+This should be a valid reason to **reject** the parameter proposal.
+
+TOMS748 has optional *Policy* argument which should be able to handle errors more informatively.
+
+### Should validation of QFs be a separate step?
+
+- Validation is expensive. Many QFs don't need validation (if they follow Gilchrist rules).
+
+- Validation of QFs could be done by proxy-rootfinding of QDF (with Chebyshev polynomials). 
+
+- Validation of CDFs? There are no Gilchrist rules for CDFs!
 
 ## References

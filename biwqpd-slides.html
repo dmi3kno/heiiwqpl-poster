@@ -416,6 +416,11 @@
   <p class="date">2022-09-19</p>
 </section>
 
+<section>
+<section id="introduction" class="title-slide slide level1 center">
+<h1>Introduction</h1>
+
+</section>
 <section id="roadmap" class="slide level2">
 <h2>Roadmap</h2>
 <div class="cell">
@@ -481,6 +486,11 @@ f(Q(u))=\frac{dF(Q(u))}{dQ(u)} = \frac{dF(Q(u))/du}{dQ(u)/du}
 <li class="fragment">Or Kumaraswamy? <span class="math inline">\(Q(u|a,b)=(1-(1-u)^{\frac{1}{b}})^{\frac{1}{a}}\)</span></li>
 </ul>
 </div>
+</section></section>
+<section>
+<section id="quantile-parameterized-distributions" class="title-slide slide level1 center">
+<h1>Quantile-parameterized distributions</h1>
+
 </section>
 <section id="smooth-beliefs" class="slide level2">
 <h2>Smooth beliefs</h2>
@@ -689,7 +699,12 @@ M(u\vert\theta), \quad \text{otherwise}
 <section id="passed" class="slide level2">
 <h2>Passed</h2>
 
-<img data-src="biwqpd-slides_files/figure-revealjs/monopoly-myerson-approx-plot-1.png" style="width:80.0%" class="r-stretch quarto-figure-center"></section>
+<img data-src="biwqpd-slides_files/figure-revealjs/monopoly-myerson-approx-plot-1.png" style="width:80.0%" class="r-stretch quarto-figure-center"></section></section>
+<section>
+<section id="bayesian-inference-with-quantile-functions" class="title-slide slide level1 center">
+<h1>Bayesian inference with quantile functions</h1>
+
+</section>
 <section id="quantile-parameterized-likelihood" class="slide level2">
 <h2>Quantile-parameterized likelihood</h2>
 <p>In order to enable learning, the <span class="math inline">\(\{q,p\}\)</span> pairs (QPPs) need to be allowed to vary. Any new set of drawn “QPP parameters” need to remain a valid QPT (e.g.&nbsp;no overlaps).</p>
@@ -1059,7 +1074,92 @@ u \overset{y}{\backsim} Q_Y(\alpha,\beta, \theta; \underline{x})\\
 <section id="posterior-predictive" class="slide level2">
 <h2>Posterior predictive</h2>
 
-<img data-src="biwqpd-slides_files/figure-revealjs/unnamed-chunk-13-1.png" width="960" class="r-stretch"></section>
+<img data-src="biwqpd-slides_files/figure-revealjs/unnamed-chunk-13-1.png" width="960" class="r-stretch"></section></section>
+<section>
+<section id="inverting-the-quantile-functions" class="title-slide slide level1 center">
+<h1>Inverting the quantile functions</h1>
+
+</section>
+<section id="bracketing-vs-derivative-based-algorithms" class="slide level2">
+<h2>Bracketing vs derivative-based algorithms</h2>
+<p>Inverting a quantile function at the point <span class="math inline">\(y\)</span> is tantamount to finding the root of the target function</p>
+<p><span class="math display">\[
+\Omega(u;y,\theta)=y-Q_Y(u \vert \theta)
+\]</span></p>
+<p>where <span class="math inline">\(y\)</span> is a known observation, <span class="math inline">\(\theta\)</span> is the parameter value, and <span class="math inline">\(u\)</span> is the depth, corresponding to the observation <span class="math inline">\(y\)</span>. Provided that the <span class="math inline">\(Q_Y(u \vert \theta)\)</span> is a non-decreasing function and <span class="math inline">\(y\)</span> is a fixed observable value, the target function <span class="math inline">\(\Omega(u;y,\theta)\)</span> with the range <span class="math inline">\(u \in [0,1]\)</span> is non-increasing.</p>
+<ul>
+<li>The <em>bracketing</em> root-finding algorithms, e.g.&nbsp;<em>bisection</em> or <em>Brent</em> <span class="citation" data-cites="atkinson2008IntroductionNumericalAnalysis burden2011NumericalAnalysis">(<a href="#/references" role="doc-biblioref" onclick="">Atkinson 2008</a>; <a href="#/references" role="doc-biblioref" onclick="">Burden and Faires 2011</a>)</span> require the interval <span class="math inline">\([a,b]\)</span> containing the root. Bracketing root-finding algorithms guarantee the convergence, although they can be slow.</li>
+<li>The <em>non-bracketing</em> root-finding algorithms, e.g.&nbsp;<em>Newton-Raphson</em>, <em>Halley</em>, etc <span class="citation" data-cites="householder1970NumericalTreatmentSingle">(<a href="#/references" role="doc-biblioref" onclick="">Householder 1970</a>)</span>, rely on computing the derivatives<a href="#/footnotes" class="footnote-ref" id="fnref5" role="doc-noteref" data-footnote-href="#/fn5" onclick=""><sup>5</sup></a> of the target function <span class="math inline">\(\Omega\)</span>. Unfortunately, the derivative-based algorithms do not guarantee that the root will be found and may end up in infinite loops and divergences.</li>
+</ul>
+<p>Modern root-finding algorithms such as TOMS748 <span class="citation" data-cites="alefeld1995Algorithm748Enclosing">(<a href="#/references" role="doc-biblioref" onclick="">Alefeld, Potra, and Shi 1995</a>)</span>, Chandrupatla <span class="citation" data-cites="chandrupatla1997NewHybridQuadratica">(<a href="#/references" role="doc-biblioref" onclick="">Chandrupatla 1997</a>)</span>, NewtSafe <span class="citation" data-cites="acton1990NumericalMethodsThat press2007NumericalRecipesArt">(<a href="#/references" role="doc-biblioref" onclick="">Acton 1990</a>; <a href="#/references" role="doc-biblioref" onclick="">Press 2007</a>)</span>, Ridders’ <span class="citation" data-cites="ridders1979NewAlgorithmComputing">(<a href="#/references" role="doc-biblioref" onclick="">Ridders 1979</a>)</span> and Zhang <span class="citation" data-cites="zhang2011ImprovementBrentMethod stage2013CommentsImprovementBrent">(<a href="#/references" role="doc-biblioref" onclick="">Zhang 2011</a>; <a href="#/references" role="doc-biblioref" onclick="">Stage 2013</a>)</span>, combine advantages of bracketing and non-bracketing methods to ensure robust and efficient convergence.</p>
+<aside></aside></section>
+<section id="existing-and-proposed-root-finders-in-stan" class="slide level2">
+<h2>Existing and proposed root-finders in Stan</h2>
+<p>The existing root-finders in Stan are all <em>derivative-based</em>, wrapping SUNDIALS implementation of Powell hybrid method and Newton method.</p>
+<ol type="1">
+<li>The <em>interface</em> is primarily aimed towards solving systems of equations, but can be re-purposed for univariate root-finding (slightly awkward but doable).</li>
+<li>Roots are not constrained. The derivative is calculated automatically (wrong?) and new <code>u_guess</code> often lands outside of <span class="math inline">\([0,1]\)</span> bounds. Rejecting the proposed parameters based on the incorrect iteration of <code>u_guess</code> is causing problems with HMC.</li>
+<li>The <code>f_tol</code> argument is behaving really strange and should be reconsidered for the purpose of finding depths <span class="math inline">\(u\)</span> for the values of <span class="math inline">\(y\)</span>.</li>
+</ol>
+<p>There is a proposal to wrap <a href="https://github.com/stan-dev/math/pull/2720"><em>Halley</em> root-finder from Boost</a>. Halley algorithm requires two derivatives (i.e.&nbsp;QDF and QCF).</p>
+<ol type="1">
+<li>The proposed wrapping will be tailored specifically for inverting QFs (and CDFs?).</li>
+<li>The <a href="https://www.boost.org/doc/libs/1_79_0/libs/math/doc/html/math_toolkit/roots_deriv.html">Boost implementation of derivative-based methods</a> has <code>min</code> and <code>max</code> arguments and includes bisection iteration in case proposed <code>u_guess</code> ends up outside of the bounds. For “well-behaved” (monotonic single root) functions specification of bounds may be enough (i.e.&nbsp;instead of specifying the initial guess “very close to the root”, the initial proposal may be found by simple bisection).</li>
+</ol>
+</section>
+<section id="existing-and-proposed-root-finders-in-stan-1" class="slide level2">
+<h2>Existing and proposed root-finders in Stan</h2>
+<p>Relevant quotes from <a href="https://www.boost.org/doc/libs/1_79_0/libs/math/doc/html/math_toolkit/roots_deriv.html">the documentation</a> (italics is mine):</p>
+<ul>
+<li>“Flat spots” in quantile function (zero derivative)</li>
+</ul>
+<blockquote>
+<p>These functions include special cases to handle zero first (and second where appropriate) derivatives, and fall back to bisect in this case. However, it is helpful if functor F is defined to <em>return an arbitrarily small value of the correct sign rather than zero</em>.</p>
+</blockquote>
+<ul>
+<li>Tails of QDF (QDF is u-shaped)</li>
+</ul>
+<blockquote>
+<p>If the derivative at the current best guess for the result is infinite (or very close to being infinite) then these functions may terminate prematurely. A <em>large first derivative leads to a very small next step, triggering the termination condition</em>. Derivative based iteration may not be appropriate in such cases.</p>
+</blockquote>
+<ul>
+<li>Target function <span class="math inline">\(\Omega\)</span> is (hopefully) well-behaved</li>
+</ul>
+<blockquote>
+<p>If the function is ‘Really Well Behaved’ (is monotonic and has only one root) the bracket bounds min and max may as well be set to the widest limits like zero and numeric_limits<t>::max().</t></p>
+</blockquote>
+</section>
+<section id="the-case-for-the-bracketing-rootfinder-in-stan" class="slide level2">
+<h2>The case for the bracketing rootfinder in Stan</h2>
+<p>When <em>inverting the QF</em> the root is naturally bracketed by <span class="math inline">\([0,1]\)</span>, however the value of QF at 0 and 1 depth might <em>not be finite</em>.</p>
+<p>When <em>inverting the CDF</em> there’s no natural bracket to wrap the root by. The <a href="https://www.boost.org/doc/libs/1_81_0/libs/math/doc/html/math_toolkit/roots_noderiv/bracket_solve.html">Bracket and Solve</a> procedure in Boost does iterative root bracketing and then invokes TOMS748 on the identified bracket.</p>
+<p>The reasons we need the bracketing rootfinder:</p>
+<ol type="1">
+<li>Computing QF with an <strong>invalid depth</strong> <code>u</code> (outside <span class="math inline">\([0,1]\)</span>), even as intermediate values inside the Newton iteration, might lead to invalid rejection of parameter proposal. <em>Rootfinder should never go outside of the parameter bounds</em>. Otherwise <code>NaN</code> returned by QF will carry through Newton iteration, unless the probability is “reset” inside the target function <span class="citation" data-cites="nair2020BayesianInferenceQuantile">(<a href="#/references" role="doc-biblioref" onclick="">Nair, Sankaran, and Dileepkumar 2020</a>)</span>. Manual resetting of <code>u_guess</code> inside target function should be avoided (due to potential divergences).</li>
+<li>Finding <strong>good <code>u_guess</code></strong> values is not a trivial task, especially in case of (parametric quantile) regression. Grid matching is expensive (unfeasible in the presence of covariates). Importance of informative <code>u_guess</code> should be tested on more complex QFs (regression, Metalog, g-and-k, GLD).</li>
+</ol>
+<p>Concerns and workarounds the bracketing rootfinder:</p>
+<ol type="1">
+<li>For bracketing rootfinder it is important to assure that the target function is of opposite sign around the root. In most extreme case, it means +/- Inf. But! Even checking if target function is infinite at 0 and 1 (<code>is_inf()</code>) affects the energy of the sampler (can not get started). Custom values (good defaults?) supplied <code>fa</code> and <code>fb</code> arguments might be useful to avoid the problems with the sampler. Needs to be checked!</li>
+<li>The <a href="https://www.boost.org/doc/libs/1_81_0/libs/math/doc/html/math_toolkit/roots_noderiv/bracket_solve.html">Bracket and solve root</a> function of Boost might be more useful for ICDF. Could it be less expensive than finding a good <code>x_guess</code> (note the <code>factor</code> argument)?</li>
+</ol>
+</section>
+<section id="validation-of-quantile-functions" class="slide level2">
+<h2>Validation of quantile functions</h2>
+<p>An invalid QF will manifest itself as:</p>
+<ul>
+<li>negative first derivative (QDF), in case of <em>derivative-based</em> rootfiding</li>
+<li>multiple roots, in case of <em>bracketing</em> rootfinding</li>
+</ul>
+<p>This should be a valid reason to <strong>reject</strong> the parameter proposal.</p>
+<p>TOMS748 has optional <em>Policy</em> argument which should be able to handle errors more informatively.</p>
+<h3 id="should-validation-of-qfs-be-a-separate-step">Should validation of QFs be a separate step?</h3>
+<ul>
+<li><p>Validation is expensive. Many QFs don’t need validation (if they follow Gilchrist rules).</p></li>
+<li><p>Validation of QFs could be done by proxy-rootfinding of QDF (with Chebyshev polynomials).</p></li>
+<li><p>Validation of CDFs? There are no Gilchrist rules for CDFs!</p></li>
+</ul>
+</section>
 <section id="references" class="slide level2 smaller scrollable">
 <h2>References</h2>
 
@@ -1067,6 +1167,15 @@ u \overset{y}{\backsim} Q_Y(\alpha,\beta, \theta; \underline{x})\\
 <p><a href="https://bit.ly/biwqpd-slides" class="uri">https://bit.ly/biwqpd-slides</a></p>
 </div>
 <div id="refs" class="references csl-bib-body hanging-indent" role="doc-bibliography">
+<div id="ref-acton1990NumericalMethodsThat" class="csl-entry" role="doc-biblioentry">
+Acton, Forman S. 1990. <em>Numerical Methods That Work</em>. Washington, D.C: Mathematical Association of America.
+</div>
+<div id="ref-alefeld1995Algorithm748Enclosing" class="csl-entry" role="doc-biblioentry">
+Alefeld, G. E., F. A. Potra, and Yixun Shi. 1995. <span>“Algorithm 748: Enclosing Zeros of Continuous Functions.”</span> <em>ACM Transactions on Mathematical Software</em> 21 (3): 327–44. <a href="https://doi.org/dd9c45">https://doi.org/dd9c45</a>.
+</div>
+<div id="ref-atkinson2008IntroductionNumericalAnalysis" class="csl-entry" role="doc-biblioentry">
+Atkinson, Kendall E. 2008. <em>An Introduction to Numerical Analysis</em>. John wiley &amp; sons.
+</div>
 <div id="ref-banner2020UseBayesianPriors" class="csl-entry" role="doc-biblioentry">
 Banner, Katharine M., Kathryn M. Irvine, and Thomas J. Rodhouse. 2020. <span>“The Use of Bayesian Priors in Ecology: The Good, the Bad and the Not Great.”</span> <em>Methods in Ecology and Evolution</em> 11 (8): 882–89. <a href="https://doi.org/10.1111/2041-210X.13407">https://doi.org/10.1111/2041-210X.13407</a>.
 </div>
@@ -1076,8 +1185,14 @@ Beppu, Aaron, and Thomas Griffiths. 2009. <span>“Iterated Learning and the Cul
 <div id="ref-brand2019CumulativeScienceBayesian" class="csl-entry" role="doc-biblioentry">
 Brand, Charlotte Olivia, James Patrick Ounsley, Daniel Job van der Post, and Thomas Joshua Henry Morgan. 2019. <span>“Cumulative Science via Bayesian Posterior Passing: An Introduction.”</span> <em>Meta-Psychology</em> 3 (June). <a href="https://doi.org/10.15626/MP.2017.840">https://doi.org/10.15626/MP.2017.840</a>.
 </div>
+<div id="ref-burden2011NumericalAnalysis" class="csl-entry" role="doc-biblioentry">
+Burden, Richard L., and J. Douglas Faires. 2011. <em>Numerical Analysis</em>. 9th ed. Boston, MA: Brooks/Cole, Cengage Learning.
+</div>
 <div id="ref-burkner2020ModellingMonotonicEffects" class="csl-entry" role="doc-biblioentry">
 Bürkner, Paul-Christian, and Emmanuel Charpentier. 2020. <span>“Modelling Monotonic Effects of Ordinal Predictors in Bayesian Regression Models.”</span> <em>British Journal of Mathematical and Statistical Psychology</em> 73 (3): 420–51. <a href="https://doi.org/ggqtkh">https://doi.org/ggqtkh</a>.
+</div>
+<div id="ref-chandrupatla1997NewHybridQuadratica" class="csl-entry" role="doc-biblioentry">
+Chandrupatla, Tirupathi R. 1997. <span>“A New Hybrid Quadratic/Bisection Algorithm for Finding the Zero of a Nonlinear Function Without Using Derivatives.”</span> <em>Advances in Engineering Software</em> 28 (3): 145–49. <a href="https://doi.org/10.1016/S0965-9978(96)00051-8">https://doi.org/10.1016/S0965-9978(96)00051-8</a>.
 </div>
 <div id="ref-drovandi2011LikelihoodfreeBayesianEstimation" class="csl-entry" role="doc-biblioentry">
 Drovandi, Christopher C., and Anthony N. Pettitt. 2011. <span>“Likelihood-Free Bayesian Estimation of Multivariate Quantile Distributions.”</span> <em>Computational Statistics &amp; Data Analysis</em> 55 (9): 2541–56. <a href="https://doi.org/fdwbxf">https://doi.org/fdwbxf</a>.
@@ -1099,6 +1214,9 @@ Hartmann, Marcelo, Georgi Agiashvili, Paul Bürkner, and Arto Klami. 2020. <span
 </div>
 <div id="ref-hoffrage2002RepresentationFacilitatesReasoning" class="csl-entry" role="doc-biblioentry">
 Hoffrage, Ulrich, Gerd Gigerenzer, Stefan Krauss, and Laura Martignon. 2002. <span>“Representation Facilitates Reasoning: What Natural Frequencies Are and What They Are Not.”</span> <em>Cognition</em> 84 (3): 343–52. <a href="https://doi.org/fqcg8h">https://doi.org/fqcg8h</a>.
+</div>
+<div id="ref-householder1970NumericalTreatmentSingle" class="csl-entry" role="doc-biblioentry">
+Householder, A. S. 1970. <em>The Numerical Treatment of a Single Nonlinear Equation</em>. London: McGraw-Hill.
 </div>
 <div id="ref-hyndman1996SampleQuantilesStatistical" class="csl-entry" role="doc-biblioentry">
 Hyndman, Rob J., and Yanan Fan. 1996. <span>“Sample Quantiles in Statistical Packages.”</span> <em>The American Statistician</em> 50 (4): 361–65. <a href="https://doi.org/10.2307/2684934">https://doi.org/10.2307/2684934</a>.
@@ -1148,11 +1266,20 @@ Perepolkin, Dmytro, Benjamin Goodrich, and Ullrika Sahlin. 2021a. <span>“Hybri
 <div id="ref-perepolkin2021TenetsQuantilebasedInference" class="csl-entry" role="doc-biblioentry">
 ———. 2021b. <span>“The Tenets of Quantile-Based Inference in Bayesian Models.”</span> Preprint. https://osf.io/enzgs: Open Science Framework. <a href="https://doi.org/10.31219/osf.io/enzgs">https://doi.org/10.31219/osf.io/enzgs</a>.
 </div>
+<div id="ref-press2007NumericalRecipesArt" class="csl-entry" role="doc-biblioentry">
+Press, William H., ed. 2007. <em>Numerical Recipes: The Art of Scientific Computing</em>. 3rd ed. Cambridge, UK ; New York: Cambridge University Press.
+</div>
 <div id="ref-pritsker2021ComparingBayesianPosterior" class="csl-entry" role="doc-biblioentry">
 Pritsker, Joshua. 2021. <span>“Comparing Bayesian Posterior Passing with Meta-Analysis.”</span> <em>Meta-Psychology</em> 5 (November). <a href="https://doi.org/10.15626/MP.2020.2539">https://doi.org/10.15626/MP.2020.2539</a>.
 </div>
+<div id="ref-ridders1979NewAlgorithmComputing" class="csl-entry" role="doc-biblioentry">
+Ridders, C. 1979. <span>“A New Algorithm for Computing a Single Root of a Real Continuous Function.”</span> <em>IEEE Transactions on Circuits and Systems</em> 26 (11): 979–80. <a href="https://doi.org/10.1109/TCS.1979.1084580">https://doi.org/10.1109/TCS.1979.1084580</a>.
+</div>
 <div id="ref-sahlin1990PhilosophyFPRamsey" class="csl-entry" role="doc-biblioentry">
 Sahlin, Nils-Eric. 1990. <em>The Philosophy of FP Ramsey</em>. Cambridge University Press.
+</div>
+<div id="ref-stage2013CommentsImprovementBrent" class="csl-entry" role="doc-biblioentry">
+Stage, Steven A. 2013. <span>“Comments on an Improvement to the Brent’s Method.”</span> <em>International Journal of Experimental Algorithms</em> 4 (1): 1–16.
 </div>
 <div id="ref-tukey1965WhichPartSample" class="csl-entry" role="doc-biblioentry">
 Tukey, John W. 1965. <span>“Which Part of the Sample Contains the Information?”</span> <em>Proceedings of the National Academy of Sciences</em> 53 (1): 127–34. <a href="https://doi.org/dkvgcq">https://doi.org/dkvgcq</a>.
@@ -1160,8 +1287,11 @@ Tukey, John W. 1965. <span>“Which Part of the Sample Contains the Information?
 <div id="ref-turlach2019MonoPolyFunctionsFit" class="csl-entry" role="doc-biblioentry">
 Turlach, B. A., and K. Murray. 2019. <em>MonoPoly: Functions to Fit Monotone Polynomials</em>. Manual.
 </div>
+<div id="ref-zhang2011ImprovementBrentMethod" class="csl-entry" role="doc-biblioentry">
+Zhang, Zhengqiu. 2011. <span>“An Improvement to the Brent’s Method.”</span> <em>International Journal of Experimental Algorithms</em> 2 (1): 21–26.
 </div>
-</section>
+</div>
+</section></section>
 <section id="footnotes" class="footnotes footnotes-end-of-document smaller scrollable" role="doc-endnotes"><h2>Footnotes</h2>
 
 <ol>
@@ -1169,6 +1299,7 @@ Turlach, B. A., and K. Murray. 2019. <em>MonoPoly: Functions to Fit Monotone Pol
 <li id="fn2"><p>Potentially</p></li>
 <li id="fn3"><p>Includes semi-bounded (LogMetalog) and bounded (LogitMetalog)</p></li>
 <li id="fn4"><p>Stan Example Models</p></li>
+<li id="fn5"><p>The first derivative of the target function is simply the negative QDF <span class="math inline">\(\Omega^\prime(u;y,\theta)=\frac{d[y-Q_Y(u \vert \theta)]}{du}=-q_Y(u \vert \theta)\)</span>.</p></li>
 </ol>
 </section>
     </div>
